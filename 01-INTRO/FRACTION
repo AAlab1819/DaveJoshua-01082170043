@@ -1,0 +1,21 @@
+#include <iostream>
+#include <algorithm>
+
+using namespace std;
+
+int main()
+{
+    int n;
+    cin>>n;
+    int numerator=0;
+    int denominator=0;
+    for(int i=1; i<=n/2; i++)
+	{
+        if(__gcd(i,n-i)==1){
+            numerator=i;
+            denominator=n-i;
+        }
+}
+    cout<<numerator<<" "<<denominator;
+    return 0;
+}
