@@ -1,21 +1,23 @@
 #include <iostream>
-#include <algorithm>
+
 using namespace std;
 
 int main()
 {
-    int n;
-    cin>>n;
-    int numerator=0;
-    int denominator=0;
-    for(int i=1; i<=n/2; i++){
-        if(__gcd(i,n-i)==1){
-            numerator=i;
-            denominator=n-i;
-        }
-    }
-    cout<<numerator<<" "<<denominator;
+    long long int yellowBall, yellowCrystal, blueBall, blueCrystal, greenBall, ans=0;
+    cin>>yellowCrystal;
+    cin>>blueCrystal;
+    cin>>yellowBall;
+    cin>>greenBall;
+    cin>>blueBall;
+    yellowCrystal=yellowCrystal-yellowBall*2-greenBall;
+    blueCrystal=blueCrystal-blueBall*3-greenBall;
+
+    if(blueCrystal<0)
+        ans+=blueCrystal*-1;
+    if(yellowCrystal<0)
+        ans+=yellowCrystal*-1;
+    cout<<ans;
+
     return 0;
 }
-
-
