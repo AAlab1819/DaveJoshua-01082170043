@@ -1,0 +1,30 @@
+#include <iostream>
+#include <algorithm>
+using namespace std;
+
+int main()
+{
+    int n;
+    cin>>n;
+    int numer=0, denom=0;
+    for(int i=1; i<=n/2; i++){
+        if(__gcd(i,n-i)==1){
+            numer=i;
+            denom=n-i;
+        }
+    }
+    cout<<numer<<" "<<denom;
+    return 0;
+}
+
+
+
+alchemy:
+to find the extra crystals that we need. We add the extra yellow and blue crystals that we need. To find the extra yellow crystals, we 
+subtract the yellow crystals that we have by 2 times yellow balls & green balls
+
+Yellow Crystal = Yellow Crystal we have - 2* Yellow Ball - Green Ball
+Blue Crystal   = Blue Crystal - 3*Blue Ball - Green Ball
+
+fraction:
+in this case, we want to find 2 numbers that we add together is n. The numbers should also be coprime. n be ireducible proper fraction.
