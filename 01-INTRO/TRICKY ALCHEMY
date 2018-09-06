@@ -14,7 +14,7 @@ int main()
             denominator=n-i;
         }
     }
-    cout<<numer<<" "<<denom;
+    cout<<numerator<<" "<<denominator;
     return 0;
 }
 
