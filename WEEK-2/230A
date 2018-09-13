@@ -1,0 +1,57 @@
+#include <iostream>
+
+using namespace std;
+
+struct Dragon
+{
+    int strength, bonus;
+};
+
+void insertionSort(Dragon arr[], int z)
+{
+   int x, y;
+   Dragon key;
+   for (x = 1; x < z; x++)
+   {
+       key = arr[x];
+       y = x-1;
+
+       while (y >= 0 && arr[y].strength > key.strength)
+       {
+           arr[y+1] = arr[y];
+           y = y-1;
+       }
+       arr[y+1] = key;
+   }
+}
+
+int main()
+{
+    int s, n;
+    cin>>s>>n;
+    Dragon dragon[n];
+    for(int x=0; x<n; x++)
+    {
+        cin>>dragon[x].strength>>dragon[x].bonus;
+    }
+    insertionSort(dragon, n);
+    for(int x=0; x<n; x++)
+    {
+
+        if(s>dragon[n-1].strength)
+        {
+            cout<<"YES";
+            break;
+        }
+        if(s>dragon[x].strength)
+        {
+            s+=dragon[x].bonus;
+        }
+        else
+        {
+            cout<<"NO";
+            break;
+        }
+    }
+    return 0;
+}
