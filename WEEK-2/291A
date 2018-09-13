@@ -1,0 +1,67 @@
+#include<iostream>
+#include<stdlib.h>
+
+using namespace std;
+
+void theBrickSort (int arr[], int num)
+{
+    bool sorted = false;
+
+    while(!sorted)
+    {
+        sorted = true;
+
+        for (int i = 1 ; i <= num - 2 ; i = i + 2)
+        {
+            if (arr[i] > arr[i+1])
+            {
+                swap(arr[i], arr[i+1]);
+                sorted = false;
+            }
+        }
+        for(int i = 0 ; i <= num - 2 ; i = i + 2)
+        {
+            if(arr[i] > arr[i+1])
+            {
+                    swap(arr[i], arr[i+1]);
+                    sorted = false;
+
+            }
+        }
+
+
+    }
+return;
+}
+
+int main()
+{
+    int secnumbs, flag = 0 ,counter = 0;
+    cin >> secnumbs;
+    int spykeId [secnumbs];
+
+    for(int i=0 ; i < secnumbs ; i++)
+    {
+        cin >> spykeId[i];
+    }
+
+    theBrickSort(spykeId, secnumbs);
+
+
+    for(int i = 0 ; i <= secnumbs ; i++)
+    {
+        flag=i+2;
+        if(spykeId[i] == spykeId[i+1] && spykeId[i] != 0)
+        {
+            counter++;
+        }
+        if(spykeId[i] == spykeId[flag] && spykeId[i] != 0)
+        {
+            counter =- 1;
+            break;
+        }
+
+
+    }
+    cout << counter << endl;
+}
