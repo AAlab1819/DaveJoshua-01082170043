@@ -1,0 +1,8 @@
+n, l = map (int , input () . split ())
+x = sorted (map ( int , input () . split () ))
+
+d = max ( min (x) , l - max (x) )
+
+for i in range (n-1):
+	d = max(d, ( x[i+1] - x[i] ) / 2)
+print (d)
