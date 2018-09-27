@@ -16,3 +16,27 @@ answer + n. Then print it.
 for i in range(1,a+1):
 ----------------------
 
+598D - Igor In The Museum:
+Igor is inside a n x m size museum.
+He has a starting place (.) of x and y and will continue following the other. if possible
+The problem is to solve how many pictures(*) he can see based on the direction left, righ, up, and down.
+
+Example 1:
+
+****
+*..*
+*.**
+**.* 
+
+if he's starting point = 3,2 and 4,3
+
+****
+*..*
+*o**
+**o*
+
+at first there are 8 pictures he can see from the first starting point and 3 for the second point.
+at this point we need to input the size of the museum = n x m, and k as the number of starting place.
+Then input the same amount of * and . as the museum. And the postion of starting point. Now we using floodfill algorithm for each space on the museum to arrayIndexMap.
+Then print out pictures he can see.
+
