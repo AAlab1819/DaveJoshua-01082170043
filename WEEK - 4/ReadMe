@@ -1,0 +1,18 @@
+268B - Buttons:
+First we need to use for user input, ->
+----------------
+a = int(input())
+----------------
+
+And then we set the value of the answer to 0 so it start from 0.
+-------
+ans = 0
+-------
+
+Now we need the paramater, and this case im using this so it will start from 1 to a+1.
+And next to get the answer we need calculate using answer + answer * 1 (a-i), and then
+answer + n. Then print it.
+----------------------
+for i in range(1,a+1):
+----------------------
+
