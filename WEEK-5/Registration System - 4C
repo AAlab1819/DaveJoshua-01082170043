@@ -1,0 +1,21 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+
+int main()
+{
+    string name;
+    int a;
+    cin>>a;
+    map<string, int> name_library; 
+    for(int i=0; i<a; i++){
+        cin>>name;
+        if(name_library[name]>0){
+            cout<<name<<name_library[name]<<endl; 
+        }else{
+            cout<<"OK"<<endl;
+        }
+        name_library[name]++;
+    }
+    return 0;
+}
