@@ -1,0 +1,30 @@
+#include<bits/stdc++.h>
+using namespace std;
+
+int main() {
+    int numSession; 
+    bool checkPossible=true;
+    cin>>numSession;
+    int pizzaOrder[numSession];
+    for (int i=0; i<numSession; i++) {
+        cin>>pizzaOrder[i];
+    }
+    //LOOP FOR CHECK
+    for (int i=0; i<numSession; i++) {
+        if (pizzaOrder[i]<0) {
+            checkPossible=false;
+        }
+        pizzaOrder[i+1]=pizzaOrder[i+1]-pizzaOrder[i]%2;
+    }
+    if (pizzaOrder[numSession-1]%2==1) {
+        checkPossible=false;
+    }
+    if (checkPossible==true) {
+        cout<<"YES"<<endl;
+    }
+    else {
+        cout<<"NO"<<endl;
+    }
+
+    return 0;
+}
