@@ -1,0 +1,24 @@
+#include<bits/stdc++.h>
+using namespace std;
+
+int main() {
+    int ElementA;
+    int ElementVal;
+    int A=0;
+    int B=0;
+    cin>>ElementA; 
+    for (int i=0; i<ElementA; i++) {
+        cin>>ElementVal;
+        if (ElementVal>0) 
+	{
+            A=A+ElementVal;
+        }
+        else 
+	{
+            B=B+ElementVal;
+        }
+    }
+    cout<<A-B<<endl;
+
+    return 0;
+}
