@@ -1,0 +1,12 @@
+433B:
+The first line is the integer n. And then at the Second line we input the array and use to process . after that the next line is the amount of questions. The next line is the type, l (left), r(right).
+
+for the Example :
+
+1 2 3 4 5 will turn into
+1 (1+2) (1+2+3) (1+2+3+4) (1+2+3+4+5)
+
+and we just need to print out.
+
+931C:
+First we need to take a greedy approach. If 2 one litre bottles cost less than a single two litre bottle, then change the cost of the two litre bottle to the cost of 2 one litre bottles. After that, extend the array of price by adding 2 times the last price to the end of the array. And then After doing that, extend the elements of array of price by adding 2 times the last price to the end of the array. And in the last step we just need to print out.
