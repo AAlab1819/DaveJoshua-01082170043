@@ -1,6 +1,9 @@
-SuperSale:
+Super Sale:
 This is the best way to fill the sack in the given item lists. In this case, we also use the extra conditions where we have to find the optimum way to fill the sack for each family member in a family.
 first we include the library, in here we use <bits/stdc++.h> so it include all the liraries.
 Now we declare the variable that we want to use one by one. Now we use the condition.
 To find the value we need to input into each table of elements. Now the first item weight or max sack that user wanted to input wanted. Second case is if the weight of the current item is less than the current max weight, then we will find the maximum value between the element above it or the current price plus optimal price of remaining weight. And after that, if the current item weight is greater then the max weight, it will takes the value from the above element Now we just need to add the value together. 
 
+Dollars:
+The a Dollar can be made up of coins that is, $1 = 100 cents. We just need to calculate how many ways the coins can be made and that will be the answer.
+So we can put all the ways the coins can be divided to an array. Then use that calculate the count. Now whenever we can divide the amount with a specific coin we increase the count. We need calculate for all the specific coins. In this code instead of using an array to calculate the count. We need to add or print a new line after each output unless otherwise specified.
