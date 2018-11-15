@@ -1,0 +1,2 @@
+20C:
+At the beginning we starting from 1, and then we make a priority queue of all its edges storing their accumulated weight and vertex. And afterIt stored, it will then move on to the next highest priority, which is the edge with least weight, and then update the priority queue with its edges. This will go on until we reach the node n, after which we will then print back the vertexes of the shortest path until reach the n.
