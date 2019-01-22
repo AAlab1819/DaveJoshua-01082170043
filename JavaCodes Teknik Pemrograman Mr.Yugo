@@ -1,173 +1,150 @@
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import java.lang.Integer;
+import java.io.*;
+
 /**
- * File:         BomberKeyQueue.java
+ * File:         BomberMain.java
  * Copyright:    Copyright (c) 2001
  * @author Sammy Leong
  * @version 1.0
  */
 
 /**
- * This class keeps track of the keyboard input in a queue for each player.
+ * This is the starting point of the game.
  */
-public class BomberKeyQueue {
-    /** head and tail nodes */
-    private Node head = null, tail = null;
-    /** total nodes */
-    private int totalItems = 0;
+public class BomberMain extends JFrame {
+    /** relative path for files */
+    public static String RP = "./";
+    /** menu object */
+    private BomberMenu menu = null;
+    /** game object */
+    private BomberGame game = null;
 
-    /**
-     * Default constructor.
-     */
-    public BomberKeyQueue() {
-        /** place holder */
+    /** sound effect player */
+    public static BomberSndEffect sndEffectPlayer = null;
+    /** this is used to calculate the dimension of the game */
+    public static final int shiftCount = 4;
+    /** this is the size of each square in the game */
+    public static final int size = 1 << shiftCount;
+
+    static {
+        sndEffectPlayer = new BomberSndEffect();
     }
 
     /**
-     * Pushes an item into the queue.
-     * @param b byte to be pushed
+     * Constructs the main frame.
      */
-    public void push(byte b) {
-        /** create the new node object */
-        Node newNode = new Node(b);
-        /** if list is empty then head and tail equals new object */
-        if (head == null) head = tail = newNode;
-        /** if list isn't empty */
-        else {
-            /** last object's next object equals new object */
-            tail.next = newNode;
-            /** new object's previous object equals last object */
-            newNode.prev = tail;
-            /** tail pointer now points to the new object */
-            tail = newNode;
-        }
-        /** increase total items count */
-        totalItems += 1;
-    }
-
-    /**
-     * Removes an item from the list then return it.
-     * @return last item in the list
-     */
-    public byte pop() {
-        /** setup object to be returned */
-        byte result = 0x00;
-        /** if list isn't empty */
-        if (tail != null) {
-            /** copy last item's data */
-            result = tail.data;
-            /** last item now becomes last item's previous item */
-            tail = tail.prev;
-            /** if list isn't empty now then set last item to point to null */
-            if (tail != null) tail.next = null;
-            /** if list is empty then head = tail = null */
-            else head = tail;
-            /** decrease total items count */
-            totalItems -= 1;
-        }
-        /** return the object */
-        return result;
-    }
-
-    /**
-     * Removes all instances of an item
-     * @param b byte to be removed
-     */
-    public void removeItems(byte b) {
-        /** create temporary node and set it to point to head */
-        Node temp = head;
-        /** loop while end of list not reached */
-        while (temp != null) {
-            /** if current pointed to object's data is equal to parameter */
-            if (temp.data == b) {
-                /** reset object's previous link */
-                if (temp.prev != null) temp.prev.next = temp.next;
-                /** reset object's next link */
-                if (temp.next != null) temp.next.prev = temp.prev;
-                /** if object is the head of list then reset head */
-                if (temp == head) head = temp.next;
-                /** if object is the tail of list then reset tail */
-                if (temp == tail) tail = temp.prev;
-                /** decrease total items count */
-                totalItems -= 1;
+    public BomberMain() {
+        /** add window event handler */
+        addWindowListener(new WindowAdapter() {
+            /**
+             * Handles window closing events.
+             * @param evt window event
+             */
+            public void windowClosing(WindowEvent evt) {
+                /** terminate the program */
+                System.exit(0);
             }
-            /** get next item in the list */
-            temp = temp.next;
+        });
+
+        /** add keyboard event handler */
+        addKeyListener(new KeyAdapter() {
+            /**
+             * Handles key pressed events.
+             * @param evt keyboard event
+             */
+            public void keyPressed(KeyEvent evt) {
+                if (menu != null) menu.keyPressed(evt);
+                if (game != null) game.keyPressed(evt);
+            }
+
+            /**
+             * Handles key released events.
+             * @param evt keyboard event
+             */
+            public void keyReleased(KeyEvent evt) {
+                if (game != null) game.keyReleased(evt);
+            }
+        });
+
+        /** set the window title */
+        setTitle("Bomberman 1.0 by Sammy Leong");
+
+        /** set the window icon */
+        try {
+            setIconImage(Toolkit.getDefaultToolkit().getImage(
+                new File(RP + "Images/Bomberman.gif").getCanonicalPath()));
+        }
+        catch (Exception e) { new ErrorDialog(e); }
+
+        /** create and add the menu to the frame */
+        getContentPane().add(menu = new BomberMenu(this));
+
+        /** set the window so that the user can't resize it */
+        setResizable(false);
+        /** minimize the size of the window */
+        pack();
+
+        /** get screen size */
+        Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
+
+        int x = (d.width - getSize().width) / 2;
+        int y = (d.height - getSize().height) / 2;
+
+        /** center the window on the screen */
+        setLocation(x, y);
+        /** show the frame */
+        show();
+        /** make this window the top level window */
+        toFront();
+    }
+
+    /**
+     * Creates a new game.
+     * @param players total number of players
+     */
+    public void newGame(int players)
+    {
+        JDialog dialog = new JDialog(this, "Loading Game...", false);
+        dialog.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        dialog.setSize(new Dimension(200, 0));
+        dialog.setResizable(false);
+        int x = getLocation().x + (getSize().width - 200) / 2;
+        int y = getLocation().y + getSize().height / 2;
+        dialog.setLocation(x, y);
+        /** show the dialog */
+        dialog.show();
+
+        /** remove existing panels in the content pane */
+        getContentPane().removeAll();
+        getLayeredPane().removeAll();
+        /** get rid of the menu */
+        menu = null;
+        /** create the map */
+        BomberMap map = new BomberMap(this);
+
+        /** create the game */
+        game = new BomberGame(this, map, players);
+
+        /** get rid of loading dialog */
+        dialog.dispose();
+        /** show the frame */
+        show();
+        /** if Java 2 available */
+        if (Main.J2) {
+           BomberBGM.unmute();
+           /** player music */
+           BomberBGM.change("Battle");
         }
     }
 
     /**
-     * Removes all elements
+     * Starting ponit of program.
+     * @param args arguments
      */
-     public void removeAll() {
-        head = tail = null;
-     }
-
-    /**
-     * @return size of the list
-     */
-    public int size() {
-        return totalItems;
-    }
-
-    /**
-     * @return the last item in the list.
-     */
-    public byte getLastItem() {
-        /** setup data to be returned */
-        byte result = 0x00;
-        /** if list isn't empty then copy last item's data */
-        if (tail != null) result = tail.data;
-        /** return the data */
-        return result;
-    }
-
-    /**
-     * @return whether an item is in the list or not
-     */
-    public boolean contains(byte b) {
-        /** setup data to be returned (default to false) */
-        boolean result = false;
-        /** create temporary Node object for navigation */
-        Node temp = head;
-        /** loop till end of list is reached */
-        while (temp != null) {
-            /** if data found then get otta here */
-            if (temp.data == b) { result = true; break; }
-            /** get next item in the list */
-            temp = temp.next;
-        }
-        /** return the result */
-        return result;
-    }
-
-    /**
-     * This is the data object for the queue.
-     */
-    private class Node {
-        /** the key data */
-        public  byte data = 0x00;
-        /** pointers / links */
-        public Node prev = null, next = null;
-
-        /**
-         * Construct with data
-         */
-        public Node(byte b)
-        {
-            /** set data */
-            data = b;
-        }
-
-        /**
-         * Copy constructor.
-         * @param n node to be copied
-         */
-        public Node(Node n)
-        {
-            /** copy data */
-            data = n.data;
-            /** copy the links */
-            prev = n.prev;
-            next = n.next;
-        }
+    public static void main(String[] args) {
+        BomberMain bomberMain1 = new BomberMain();
     }
 }
