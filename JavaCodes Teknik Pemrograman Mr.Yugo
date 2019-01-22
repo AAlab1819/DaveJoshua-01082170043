@@ -1,121 +1,173 @@
-import java.awt.event.KeyEvent;
-import java.io.*;
-
 /**
- * File:         BomberKeyConfig.java
+ * File:         BomberKeyQueue.java
  * Copyright:    Copyright (c) 2001
  * @author Sammy Leong
  * @version 1.0
  */
 
 /**
- * This class keeps track of the keyboard configration for each player.
- * This class can't be instanciated.
+ * This class keeps track of the keyboard input in a queue for each player.
  */
-public abstract class BomberKeyConfig {
-    /** the keys */
-    public static int[][] keys = null;
-    /** player numbers enumerations */
-    public static final int P1 = 0;
-    public static final int P2 = 1;
-    public static final int P3 = 2;
-    public static final int P4 = 3;
-    /** key number enumerations */
-    public static final int UP = 0;
-    public static final int DOWN = 1;
-    public static final int LEFT = 2;
-    public static final int RIGHT = 3;
-    public static final int BOMB = 4;
+public class BomberKeyQueue {
+    /** head and tail nodes */
+    private Node head = null, tail = null;
+    /** total nodes */
+    private int totalItems = 0;
 
-    /** open the key configuration file */
-    static {
-        /** try to open the file and if can't open file then */
-        if (!openFile())
-        {
-            /** create the default configuration file */
-            createDefaultFile();
-            /** then try to open it again */
-            openFile();
+    /**
+     * Default constructor.
+     */
+    public BomberKeyQueue() {
+        /** place holder */
+    }
+
+    /**
+     * Pushes an item into the queue.
+     * @param b byte to be pushed
+     */
+    public void push(byte b) {
+        /** create the new node object */
+        Node newNode = new Node(b);
+        /** if list is empty then head and tail equals new object */
+        if (head == null) head = tail = newNode;
+        /** if list isn't empty */
+        else {
+            /** last object's next object equals new object */
+            tail.next = newNode;
+            /** new object's previous object equals last object */
+            newNode.prev = tail;
+            /** tail pointer now points to the new object */
+            tail = newNode;
+        }
+        /** increase total items count */
+        totalItems += 1;
+    }
+
+    /**
+     * Removes an item from the list then return it.
+     * @return last item in the list
+     */
+    public byte pop() {
+        /** setup object to be returned */
+        byte result = 0x00;
+        /** if list isn't empty */
+        if (tail != null) {
+            /** copy last item's data */
+            result = tail.data;
+            /** last item now becomes last item's previous item */
+            tail = tail.prev;
+            /** if list isn't empty now then set last item to point to null */
+            if (tail != null) tail.next = null;
+            /** if list is empty then head = tail = null */
+            else head = tail;
+            /** decrease total items count */
+            totalItems -= 1;
+        }
+        /** return the object */
+        return result;
+    }
+
+    /**
+     * Removes all instances of an item
+     * @param b byte to be removed
+     */
+    public void removeItems(byte b) {
+        /** create temporary node and set it to point to head */
+        Node temp = head;
+        /** loop while end of list not reached */
+        while (temp != null) {
+            /** if current pointed to object's data is equal to parameter */
+            if (temp.data == b) {
+                /** reset object's previous link */
+                if (temp.prev != null) temp.prev.next = temp.next;
+                /** reset object's next link */
+                if (temp.next != null) temp.next.prev = temp.prev;
+                /** if object is the head of list then reset head */
+                if (temp == head) head = temp.next;
+                /** if object is the tail of list then reset tail */
+                if (temp == tail) tail = temp.prev;
+                /** decrease total items count */
+                totalItems -= 1;
+            }
+            /** get next item in the list */
+            temp = temp.next;
         }
     }
 
     /**
-     * Opens the configuration file.
+     * Removes all elements
      */
-    public static boolean openFile() {
-        /** setup result to be returned */
-        boolean result = true;
-        /** try to open the file */
-        try {
-            /** create the file stream object */
-            ObjectInputStream inputStream =
-            new ObjectInputStream(new FileInputStream("BomberKeyConfig.dat"));
-            /** read the file into memory */
-            keys = (int[][])inputStream.readObject();
-            /** close the file */
-            inputStream.close();
-        }
-        /** if anything goes wrong, set result to to false */
-        catch (Exception e) {
-            result = false;
+     public void removeAll() {
+        head = tail = null;
+     }
+
+    /**
+     * @return size of the list
+     */
+    public int size() {
+        return totalItems;
+    }
+
+    /**
+     * @return the last item in the list.
+     */
+    public byte getLastItem() {
+        /** setup data to be returned */
+        byte result = 0x00;
+        /** if list isn't empty then copy last item's data */
+        if (tail != null) result = tail.data;
+        /** return the data */
+        return result;
+    }
+
+    /**
+     * @return whether an item is in the list or not
+     */
+    public boolean contains(byte b) {
+        /** setup data to be returned (default to false) */
+        boolean result = false;
+        /** create temporary Node object for navigation */
+        Node temp = head;
+        /** loop till end of list is reached */
+        while (temp != null) {
+            /** if data found then get otta here */
+            if (temp.data == b) { result = true; break; }
+            /** get next item in the list */
+            temp = temp.next;
         }
         /** return the result */
         return result;
     }
 
     /**
-     * Writes the file with current data in memory.
+     * This is the data object for the queue.
      */
-    public static void writeFile() {
-        /** try to create the file */
-        try {
-            /** create the file object, overwrite the file if needs to */
-            ObjectOutputStream outputStream =
-            new ObjectOutputStream(new FileOutputStream("BomberKeyConfig.dat"));
-            /** write the file */
-            outputStream.writeObject((int[][])keys);
-            /** close the file */
-            outputStream.close();
+    private class Node {
+        /** the key data */
+        public  byte data = 0x00;
+        /** pointers / links */
+        public Node prev = null, next = null;
+
+        /**
+         * Construct with data
+         */
+        public Node(byte b)
+        {
+            /** set data */
+            data = b;
         }
-        catch (Exception e) { new ErrorDialog(e); }
-    }
 
-    /**
-     * Creates the configuration file with default configurations.
-     */
-    public static void createDefaultFile() {
-        /** create the data, if it doens't exist already */
-        if (keys == null) keys = new int[4][5];
-
-        /** player 1 default key configurations */
-        keys[P1][UP] = KeyEvent.VK_UP;
-        keys[P1][DOWN] = KeyEvent.VK_DOWN;
-        keys[P1][LEFT] = KeyEvent.VK_LEFT;
-        keys[P1][RIGHT] = KeyEvent.VK_RIGHT;
-        keys[P1][BOMB] = KeyEvent.VK_NUMPAD0;
-
-        /** player 2 default key configurations */
-        keys[P2][UP] = KeyEvent.VK_W;
-        keys[P2][DOWN] = KeyEvent.VK_S;
-        keys[P2][LEFT] = KeyEvent.VK_A;
-        keys[P2][RIGHT] = KeyEvent.VK_D;
-        keys[P2][BOMB] = KeyEvent.VK_SPACE;
-
-        /** player 3 default key configurations */
-        keys[P3][UP] = KeyEvent.VK_I;
-        keys[P3][DOWN] = KeyEvent.VK_K;
-        keys[P3][LEFT] = KeyEvent.VK_J;
-        keys[P3][RIGHT] = KeyEvent.VK_L;
-        keys[P3][BOMB] = KeyEvent.VK_BACK_SLASH;
-
-        /** player 4 default key configurations */
-        keys[P4][UP] = KeyEvent.VK_NUMPAD8;
-        keys[P4][DOWN] = KeyEvent.VK_NUMPAD5;
-        keys[P4][LEFT] = KeyEvent.VK_NUMPAD4;
-        keys[P4][RIGHT] = KeyEvent.VK_NUMPAD6;
-        keys[P4][BOMB] = KeyEvent.VK_NUMPAD9;
-
-        /** write the file */
-        writeFile();
+        /**
+         * Copy constructor.
+         * @param n node to be copied
+         */
+        public Node(Node n)
+        {
+            /** copy data */
+            data = n.data;
+            /** copy the links */
+            prev = n.prev;
+            next = n.next;
+        }
     }
 }
