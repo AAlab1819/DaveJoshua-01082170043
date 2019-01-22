@@ -1,34 +1,46 @@
 import java.awt.*;
+import java.awt.event.*;
 import javax.swing.*;
+import java.io.*;
 
 /**
- * Title:        Bomberman
- * Description:
+ * File:         BomberGame.java
  * Copyright:    Copyright (c) 2001
  * @author Sammy Leong
  * @version 1.0
  */
 
-public class BomberFire extends Thread {
+/**
+ * This class contains the player objects.
+ */
+public class BomberGame extends JPanel
+implements ActionListener {
+    /** main frame object */
+    private BomberMain main = null;
+    /** game over flag */
+    private boolean gameOver = false;
     /** map object */
     private BomberMap map = null;
-    /** map grid handle */
-    private int[][] grid = null;
-    /** position */
-    private int x = 0;
-    private int y = 0;
-    /** fire type */
-    private int type = 0;
-    /** frame count */
-    private int frame = 0;
-    /** owner */
-    private int owner = 0;
-    /** bomb sprite image handles */
-    private static Image[][] images = null;
+    /** winner */
+    private int winner = -1;
+    /** timer */
+    private Timer timer = null;
+    /** elapsed seconds */
+    private int elapsedSec = 0;
+
     /** rendering hints */
     private static Object hints = null;
+    /** end game images */
+    private static Image[] images = null;
+    /** total number of players */
+    public static int totalPlayers = 4;
+    /** players alive */
+    public static int playersLeft = totalPlayers;
+    /** player objects */
+    public static BomberPlayer[] players = null;
 
-    static {
+    static
+    {
         /** if java runtime is Java 2 */
         if (Main.J2) {
             /** create the rendering hints for better graphics output */
@@ -46,82 +58,155 @@ public class BomberFire extends Thread {
              RenderingHints.VALUE_COLOR_RENDER_QUALITY);
             hints = (RenderingHints)h;
         }
-    }
 
-    public BomberFire(BomberMap map, int x, int y, int type) {
-        this.map = map;
-        grid = map.grid;
-        this.x = x;
-        this.y = y;
-        this.type = type;
-        this.owner = owner - 1;
-        this.images = BomberMap.fireImages;
-
-        if (type == BomberMap.FIRE_BRICK)
-           grid[x >> BomberMain.shiftCount][y >> BomberMain.shiftCount] =
-           BomberMap.FIRE_BRICK;
-        map.fireGrid[x >> BomberMain.shiftCount][y >> BomberMain.shiftCount] =
-        true;
-
-        /** see if there is a bonus in the same spot */
-        if (map.bonusGrid[x >> BomberMain.shiftCount]
-        [y >> BomberMain.shiftCount] != null) {
-           /** if yes then remove it */
-           map.removeBonus(x, y);
-        }
-
-        setPriority(Thread.MAX_PRIORITY);
-        start();
-    }
-
-    /**
-     * Main loop.
-     */
-    public void run() {
-        while (true) {
-            /** draw the fire */
-            paint();
-            /** see if any players are in the way */
-            for (int i = 0; i < BomberGame.totalPlayers; i++) {
-                /** if there is */
-                if ((BomberGame.players[i].x >> BomberMain.shiftCount) ==
-                (x >> BomberMain.shiftCount) && (BomberGame.players[i].y >>
-                BomberMain.shiftCount) == (y >> BomberMain.shiftCount)) {
-                    /** then kill it */
-                    BomberGame.players[i].kill();
-                }
+        String path = BomberMain.RP + "Images/BomberEndGame/";
+        String str = null;
+        /** create the images */
+        images = new Image[6];
+        /** open the image files */
+        try
+        {
+            for (int i = 0; i < 4; i++) {
+                str = path + "Player " + (i + 1) + " Wins.jpg";
+                images[i] = Toolkit.getDefaultToolkit().getImage(
+                new File(str).getCanonicalPath());
             }
-            /** increase frame */
-            frame = frame + 1;
-            /** sleep for 65 ms */
-            try { sleep(65); } catch (Exception e) {}
-            /** if frame is greater than 7 then it's finish burning */
-            if (frame > 7) break;
-        }
-        map.grid[x >> BomberMain.shiftCount][y >> BomberMain.shiftCount] =
-        BomberMap.NOTHING;
-        map.fireGrid[x >> BomberMain.shiftCount][y >> BomberMain.shiftCount] =
-        false;
-        /** if this is a tail or brick, then it's the last fire in the chain */
-        /** then refresh the screen */
-        map.paintImmediately(x, y, BomberMain.size, BomberMain.size);
-        /** if this was a brick then create a bonus there */
-        if (type == BomberMap.FIRE_BRICK) { map.createBonus(x, y); }
+            str = path + "Draw.jpg";
+            images[4] = Toolkit.getDefaultToolkit().getImage(
+            new File(str).getCanonicalPath());
+            str = path + "Enter to Continue.jpg";
+            images[5] = Toolkit.getDefaultToolkit().getImage(
+            new File(str).getCanonicalPath());
+        } catch (Exception e) { new ErrorDialog(e); }
     }
 
     /**
-     * Drawing method.
+     * Constructs a game.
+     * @param main main frame object
+     * @param map map object
+     * @param totalPlayers total number of players
      */
-    public void paint() {
-        Graphics g = map.getGraphics();
+    public BomberGame(BomberMain main, BomberMap map, int totalPlayers) {
+        this.main = main;
+        this.map = map;
+        this.totalPlayers = this.playersLeft = totalPlayers;
+
+        /** load the images */
+        try {
+            MediaTracker tracker = new MediaTracker(this);
+            for (int i = 0; i < 6; i++) tracker.addImage(images[i], i);
+            tracker.waitForAll();
+        }
+        catch (Exception e) { new ErrorDialog(e); }
+
+        /** create the players array */
+        players = new BomberPlayer[totalPlayers];
+        /** create the players */
+        for (int i = 0; i < totalPlayers; i++)
+            players[i] = new BomberPlayer(this, map, i + 1);
+
+        /** double buffer on */
+        setDoubleBuffered(true);
+        setBounds(0, 0, 17 << main.shiftCount, 17 << main.shiftCount);
+        /** set it to opaque */
+        setOpaque(false);
+        /** add it to the top layer */
+        main.getLayeredPane().add(this, 0);
+    }
+
+    /**
+     * Key pressed handler
+     * @param evt key event
+     */
+    public void keyPressed(KeyEvent evt)
+    {
+        if (!gameOver) {
+           for (int i = 0; i < totalPlayers; i++)
+               players[i].keyPressed(evt);
+        }
+        else if (evt.getKeyCode() == KeyEvent.VK_ENTER)
+        {
+            timer.stop();
+            timer = null;
+            main.dispose();
+            new BomberMain();
+        }
+    }
+
+    /**
+     * Key released handler
+     * @param evt key event
+     */
+    public void keyReleased(KeyEvent evt)
+    {
+        if (!gameOver) {
+           for (int i = 0; i < totalPlayers; i++)
+               players[i].keyReleased(evt);
+        }
+    }
+
+    /**
+     * Drawing handler.
+     * @param graphics graphics handle
+     */
+    public void paint(Graphics graphics) {
+        Graphics g = graphics;
+        /** if game is active */
+        if (!gameOver) {
+           for (int i = 0; i < totalPlayers; i++)
+               players[i].paint(graphics);
+        }
         /** if java runtime is Java 2 */
-        if (Main.J2) { paint2D(map.getGraphics()); }
+        if (Main.J2) { paint2D(graphics); }
         /** if java runtime isn't Java 2 */
         else {
-             g.drawImage(images[type][frame], x, y,
-             BomberMain.size, BomberMain.size, null);
+            /** if game is over */
+            if (gameOver) {
+                /** draw end game image */
+                g.drawImage(images[winner], 0,
+                BomberMain.size == 16 ? -25 : -50,
+                17 << BomberMain.shiftCount,
+                17 << BomberMain.shiftCount, this);
+                /** if elapsed seconds % 2 == 0 */
+                /** then draw press enter to exit image */
+                if (elapsedSec == 0)
+                    g.drawImage(images[5], 0,
+                    (17 << BomberMain.shiftCount) - images[5].getHeight(this) /
+                    (BomberMain.size != 16 ? 1 : 2),
+                    images[5].getWidth(this) / (BomberMain.size != 16 ? 1 : 2),
+                    images[5].getHeight(this) /
+                    (BomberMain.size != 16 ? 1 : 2), this);
+                /** if elapsed seconds % 2 == 1 then clear the area */
+                else
+                    g.fillRect(0, (17 << BomberMain.shiftCount) -
+                    images[5].getHeight(this) /
+                    (BomberMain.size != 16 ? 1 : 2),
+                    images[5].getWidth(this) /
+                     (BomberMain.size != 16 ? 1 : 2),
+                    images[5].getHeight(this) /
+                    (BomberMain.size != 16 ? 1 : 2));
+            }
+            /** if 1 or less players left alive */
+            if (playersLeft <= 1 && timer == null)
+            {
+                /** deactiavte all the players */
+                for (int i = 0; i < totalPlayers; i++)
+                    players[i].deactivate();
+                timer = new Timer(1000, this);
+                timer.start();
+            }
         }
-        g.dispose();
+    }
+
+    /**
+     * Public accessor to paintImmediately(...).
+     * @param x x-coordinate
+     * @param y y-coordinate
+     * @param w width
+     * @param h height
+     */
+    public void pPaintImmediately(int x, int y, int w, int h) {
+        paintImmediately(x, y, w, h);
     }
 
     /**
@@ -132,7 +217,71 @@ public class BomberFire extends Thread {
         Graphics2D g2 = (Graphics2D)graphics;
         /** set the rendering hints */
         g2.setRenderingHints((RenderingHints)hints);
-        g2.drawImage(images[type][frame], x, y,
-        BomberMain.size, BomberMain.size, null);
+        /** if game is over */
+        if (gameOver) {
+            /** draw end game image */
+            g2.drawImage(images[winner], 0, BomberMain.size == 16 ? -25 : -50,
+            17 << BomberMain.shiftCount, 17 << BomberMain.shiftCount, this);
+            /** if elapsed seconds % 2 == 0 */
+            /** then draw press enter to exit image */
+            if (elapsedSec == 0)
+                g2.drawImage(images[5], 0,
+                (17 << BomberMain.shiftCount) - images[5].getHeight(this) /
+                (BomberMain.size != 16 ? 1 : 2),
+                images[5].getWidth(this) / (BomberMain.size != 16 ? 1 : 2),
+                images[5].getHeight(this) /
+                 (BomberMain.size != 16 ? 1 : 2), this);
+            /** if elapsed seconds % 2 == 1 then clear the area */
+            else
+                g2.fillRect(0, (17 << BomberMain.shiftCount) -
+                images[5].getHeight(this) / (BomberMain.size != 16 ? 1 : 2),
+                images[5].getWidth(this) / (BomberMain.size != 16 ? 1 : 2),
+                images[5].getHeight(this) / (BomberMain.size != 16 ? 1 : 2));
+        }
+        /** if 1 or less players left alive */
+        if (playersLeft <= 1 && timer == null)
+        {
+            /** deactiavte all the players */
+            for (int i = 0; i < totalPlayers; i++)
+                players[i].deactivate();
+            timer = new Timer(1000, this);
+            timer.start();
+        }
+    }
+
+    public void actionPerformed(ActionEvent evt) {
+        /** increased elapsed time */
+        elapsedSec += 1;
+        /** if elapsed 4 seconds */
+        if (elapsedSec >= 4)
+        {
+            /** if Java 2 available */
+            if (Main.J2) {
+               /** stop background music */
+               BomberBGM.mute();
+            }
+            /** set default game result = draw */
+            winner = 4;
+            /** find winner */
+            for (int i = 0; i < totalPlayers; i++) {
+                if (!players[i].isDead()) { winner = i; break; }
+            }
+            gameOver = true;
+            map.setGameOver();
+            /** restart timer with new delay */
+            timer.stop();
+            timer = new Timer(500, this);
+            timer.start();
+        }
+        /** if game is over */
+        if (gameOver)
+        {
+            elapsedSec %= 2;
+            paintImmediately(0,
+            (17 << BomberMain.shiftCount) - images[5].getHeight(this) /
+            (BomberMain.size != 16 ? 1 : 2),
+            images[5].getWidth(this)  / (BomberMain.size != 16 ? 1 : 2),
+            images[5].getHeight(this)  / (BomberMain.size != 16 ? 1 : 2));
+        }
     }
 }
