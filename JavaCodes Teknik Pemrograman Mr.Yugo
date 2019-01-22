@@ -3,16 +3,16 @@ import javax.swing.*;
 import java.io.*;
 
 /**
- * File:         BomberBomb
+ * File:         BomberBonus
  * Copyright:    Copyright (c) 2001
  * @author Sammy Leong
  * @version 1.0
  */
 
 /**
- * This class creates the bombs in the game.
+ * This class creates the bonuses in the game.
  */
-public class BomberBomb extends Thread {
+public class BomberBonus extends Thread {
     /** map object */
     private BomberMap map = null;
     /** position */
@@ -22,14 +22,15 @@ public class BomberBomb extends Thread {
     private int frame = 0;
     /** alive flag */
     private boolean alive = true;
-    /** owner */
-    private int owner = 0;
-    /** count down : 3000 ms */
-    private int countDown = 3900;
+    /** bonus type */
+    private int type = 0;
     /** bomb sprite image handles */
-    private static Image[] images = null;
+    private Image[] images = null;
     /** rendering hints */
     private static Object hints = null;
+
+    private static int FIRE = 0;
+    private static int BOMB = 1;
 
     static {
         /** if java runtime is Java 2 */
@@ -52,22 +53,19 @@ public class BomberBomb extends Thread {
     }
 
     /**
-     * Constructs a BOMB!
-     * @param map game map
+     * Constructs a bonus.
+     * @param map map object
      * @param x x-coordinate
-     * @param y y-coordinate
-     * @param owner owner
-     * @param images bomb images
+     * @param y y-coordinage
+     * @param type bonus type;
      */
-    public BomberBomb(BomberMap map, int x, int y, int owner) {
+    public BomberBonus(BomberMap map, int x, int y, int type) {
         this.map = map;
         this.x = x;
         this.y = y;
-        this.owner = owner - 1;
-        this.images = BomberMap.bombImages;
+        this.type = type;
+        this.images = BomberMap.bonusImages[type];
 
-        map.grid[x >> BomberMain.shiftCount][y >> BomberMain.shiftCount] =
-        BomberMap.BOMB;
         setPriority(Thread.MAX_PRIORITY);
         start();
     }
@@ -77,39 +75,36 @@ public class BomberBomb extends Thread {
      */
     public synchronized void run() {
         while (alive) {
-            /** draw the bomb */
-            //paint();
+            /** draw the bonus */
             map.paintImmediately(x, y, BomberMain.size, BomberMain.size);
             /** rotate frame */
             frame = (frame + 1) % 2;
             /** sleep for 130 ms */
             try { sleep(130); } catch (Exception e) {}
-            if (!alive) break;
-            /** decrease count down */
-            countDown -= 130;
-            /** if count down reached 0 then exit */
-            /** the loop and short the bomb */
-            if (countDown <= 0) break;
+            if (frame == 10) break;
         }
         /** remove it from the grid */
-        map.grid[x >> BomberMain.shiftCount][y >> BomberMain.shiftCount] =
-        BomberMap.NOTHING;
-        /** give the bomb back to the player */
-        BomberGame.players[owner].usedBombs -= 1;
-        map.bombGrid[x >> BomberMain.shiftCount][y >> BomberMain.shiftCount] =
-        null;
-        BomberGame.players[owner].bombGrid
-        [x >> BomberMain.shiftCount][y >> BomberMain.shiftCount] = false;
-        map.removeBomb(x, y);
-        BomberMain.sndEffectPlayer.playSound("Explosion");
-        /** create the fire */
-        map.createFire(x, y, owner, BomberMap.FIRE_CENTER);
+        map.removeBonus(x, y);
     }
 
     /**
-     * Explodes the bomb
+     * Gives this bonus to a user then removes it.
      */
-    public void shortBomb() {
+    public void giveToPlayer(int player) {
+        BomberMain.sndEffectPlayer.playSound("Bonus");
+        /** if it's a fire bonus */
+        if (type == FIRE) /** then increase the fire length by 1 */
+           BomberGame.players[player - 1].fireLength += 1;
+        /** if it's a bomb bonus */
+        else if (type == BOMB) /** then increase the bomb count by 1 */
+             BomberGame.players[player - 1].totalBombs += 1;
+        kill();
+    }
+
+    /**
+     * Kills the object along with the thread
+     */
+    public void kill() {
         alive = false;
         interrupt();
     }
