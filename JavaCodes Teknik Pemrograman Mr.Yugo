@@ -1,132 +1,121 @@
-import java.awt.*;
-import javax.swing.*;
+import java.awt.event.KeyEvent;
 import java.io.*;
 
 /**
- * File:         BomberImagePanel.java
+ * File:         BomberKeyConfig.java
  * Copyright:    Copyright (c) 2001
  * @author Sammy Leong
  * @version 1.0
  */
 
 /**
- * This class creates a custom image button object.
+ * This class keeps track of the keyboard configration for each player.
+ * This class can't be instanciated.
  */
-public class BomberImageButton {
-    /** this object's container */
-    private JPanel panel;
-    /** x co-ordinate where the image is drawn */
-    private int x;
-    /** y co-ordinate where the image is drawn */
-    private int y;
-    /** ID of object (for command) */
-    private int ID;
-    /** image width */
-    private int w;
-    /** image height */
-    private int h;
-    /** area the object controls */
-    private Rectangle rect;
-    /** the images of the button: normal / outerglowed */
-    private Image[] images;
-    /** stae of button: normal / outglowed */
-    private int state = 0;
+public abstract class BomberKeyConfig {
+    /** the keys */
+    public static int[][] keys = null;
+    /** player numbers enumerations */
+    public static final int P1 = 0;
+    public static final int P2 = 1;
+    public static final int P3 = 2;
+    public static final int P4 = 3;
+    /** key number enumerations */
+    public static final int UP = 0;
+    public static final int DOWN = 1;
+    public static final int LEFT = 2;
+    public static final int RIGHT = 3;
+    public static final int BOMB = 4;
 
-    /** rendering hints */
-    private static Object hints = null;
-
+    /** open the key configuration file */
     static {
-        /** if java runtime is Java 2 */
-        if (Main.J2) {
-            /** create the rendering hints for better graphics output */
-            RenderingHints h = null;
-            h = new RenderingHints(null);
-            h.put(RenderingHints.KEY_TEXT_ANTIALIASING,
-             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            h.put(RenderingHints.KEY_FRACTIONALMETRICS,
-             RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-            h.put(RenderingHints.KEY_ALPHA_INTERPOLATION,
-             RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-            h.put(RenderingHints.KEY_ANTIALIASING,
-             RenderingHints.VALUE_ANTIALIAS_ON);
-            h.put(RenderingHints.KEY_COLOR_RENDERING,
-             RenderingHints.VALUE_COLOR_RENDER_QUALITY);
-            hints = (RenderingHints)h;
+        /** try to open the file and if can't open file then */
+        if (!openFile())
+        {
+            /** create the default configuration file */
+            createDefaultFile();
+            /** then try to open it again */
+            openFile();
         }
     }
 
     /**
-     * Construct with a MainMenu object and an array of images for use with
-     * the button.
-     * @param mainMenu object's container
-     * @param images images for the button
+     * Opens the configuration file.
      */
-    public BomberImageButton(JPanel panel, Image[] images) {
-        this.panel = panel;
-        this.images = images;
-        /** calculate image dimension */
-        w = images[0].getWidth(panel);
-        h = images[0].getHeight(panel);
-    }
-
-    /**
-     * Set object's parameters.
-     * @param x x co-ordinate on window
-     * @param y y co-ordinate on window
-     * @param ID object's ID or command return code
-     */
-    public void setInfo(int x, int y, int ID) {
-        this.x = x;
-        this.y = y;
-        this.ID = ID;
-        /** calculate area in which the object owns to handle mouse events */
-        rect = new Rectangle(this.x, this.y - 5, w, h + 10);
-    }
-
-    /**
-     * @return the ojbect's ID
-     */
-    public int getID() {
-        return ID;
-    }
-
-    /**
-     * Set bevel on or off
-     * @param bevelOn true or false
-     */
-     public void setBevel(boolean bevelOn) {
-        if (bevelOn) state = 1; else state = 0;
-        panel.repaint();
-        panel.paintImmediately(x, y, w / (32 / BomberMain.size * 2),
-           h / (32 / BomberMain.size * 2));
-     }
-
-    /**
-     * Draws the button onto the window.
-     * @param graphics graphics handler
-     */
-    public void paint(Graphics graphics) {
-        /** if java runtime is Java 2 */
-        if (Main.J2) { paint2D(graphics); }
-        /** if java runtime isn't Java 2 */
-        else {
-            Graphics g = graphics;
-            /** draw the button */
-            g.drawImage(images[state], x, y, w / (32 / BomberMain.size * 2),
-            h / (32 / BomberMain.size * 2), null);
+    public static boolean openFile() {
+        /** setup result to be returned */
+        boolean result = true;
+        /** try to open the file */
+        try {
+            /** create the file stream object */
+            ObjectInputStream inputStream =
+            new ObjectInputStream(new FileInputStream("BomberKeyConfig.dat"));
+            /** read the file into memory */
+            keys = (int[][])inputStream.readObject();
+            /** close the file */
+            inputStream.close();
         }
+        /** if anything goes wrong, set result to to false */
+        catch (Exception e) {
+            result = false;
+        }
+        /** return the result */
+        return result;
     }
 
     /**
-     * Drawing method for Java 2's Graphics2D
-     * @param graphics graphics handle
+     * Writes the file with current data in memory.
      */
-    public void paint2D(Graphics graphics) {
-        Graphics2D g2 = (Graphics2D)graphics;
-        /** set the rendering hints */
-        g2.setRenderingHints((RenderingHints)hints);
-        /** draw the button */
-        g2.drawImage(images[state], x, y, w / (32 / BomberMain.size * 2),
-        h / (32 / BomberMain.size * 2), null);
+    public static void writeFile() {
+        /** try to create the file */
+        try {
+            /** create the file object, overwrite the file if needs to */
+            ObjectOutputStream outputStream =
+            new ObjectOutputStream(new FileOutputStream("BomberKeyConfig.dat"));
+            /** write the file */
+            outputStream.writeObject((int[][])keys);
+            /** close the file */
+            outputStream.close();
+        }
+        catch (Exception e) { new ErrorDialog(e); }
+    }
+
+    /**
+     * Creates the configuration file with default configurations.
+     */
+    public static void createDefaultFile() {
+        /** create the data, if it doens't exist already */
+        if (keys == null) keys = new int[4][5];
+
+        /** player 1 default key configurations */
+        keys[P1][UP] = KeyEvent.VK_UP;
+        keys[P1][DOWN] = KeyEvent.VK_DOWN;
+        keys[P1][LEFT] = KeyEvent.VK_LEFT;
+        keys[P1][RIGHT] = KeyEvent.VK_RIGHT;
+        keys[P1][BOMB] = KeyEvent.VK_NUMPAD0;
+
+        /** player 2 default key configurations */
+        keys[P2][UP] = KeyEvent.VK_W;
+        keys[P2][DOWN] = KeyEvent.VK_S;
+        keys[P2][LEFT] = KeyEvent.VK_A;
+        keys[P2][RIGHT] = KeyEvent.VK_D;
+        keys[P2][BOMB] = KeyEvent.VK_SPACE;
+
+        /** player 3 default key configurations */
+        keys[P3][UP] = KeyEvent.VK_I;
+        keys[P3][DOWN] = KeyEvent.VK_K;
+        keys[P3][LEFT] = KeyEvent.VK_J;
+        keys[P3][RIGHT] = KeyEvent.VK_L;
+        keys[P3][BOMB] = KeyEvent.VK_BACK_SLASH;
+
+        /** player 4 default key configurations */
+        keys[P4][UP] = KeyEvent.VK_NUMPAD8;
+        keys[P4][DOWN] = KeyEvent.VK_NUMPAD5;
+        keys[P4][LEFT] = KeyEvent.VK_NUMPAD4;
+        keys[P4][RIGHT] = KeyEvent.VK_NUMPAD6;
+        keys[P4][BOMB] = KeyEvent.VK_NUMPAD9;
+
+        /** write the file */
+        writeFile();
     }
 }
