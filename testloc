@@ -1,92 +1,108 @@
 package org.gdc.gdcalaga;
+import java.util.ArrayList;
 
-import org.gdc.gdcalaga.Entity.Alliance;
 import org.newdawn.slick.geom.Vector2f;
 
+/*
+ * This class contains hard coded positions for additional gun positions
+ *  on the player's ship.
+ * The positions only need to be adjusted to the ship's world transform.
+ * This class should only be initialized once.
+ */
 
-public class  Gun {
-
-	public static int MAX_GUN_TYPES = 3; //fixme use enum max value correctly.
-	
-	enum GunType {
-		StraightShot,
-		AimedShot,
-		TripleShot,
-	}
-	
-	protected float velocity;
-	protected GunType gunType;
-	protected EntityManager entityManager;
-	protected Entity.Alliance alliance;
-	protected int bulletDamage = 1;
-	
-	
-	public Gun(EntityManager entityManager, float velocity, Entity.Alliance alliance, GunType gunType)
-	{
-		this.entityManager = entityManager;
-		this.velocity = velocity;
-		this.alliance = alliance;
-		this.gunType = gunType;
-		
-	}
-	
-	public void shoot(Vector2f bulletPosition, Vector2f target)
-	{
-    	switch(gunType)
-    	{
-    	case StraightShot:
-    		straightShot(bulletPosition);
-    		break;
-    	case AimedShot:
-    		aimedShot(bulletPosition, target);
-    		break;
-    	case TripleShot:
-    		tripleShot(bulletPosition);
-    		break;
-		default: 
-			break;
-    	}
-	}
-	
-	private void straightShot(Vector2f bulletPosition) {
-        Bullet newBullet = new Bullet(entityManager, bulletPosition, bulletDamage, alliance);
-        if(alliance == Alliance.ENEMY)
-        	newBullet.setSpeed(-velocity, 0);
-        else
-        	newBullet.setSpeed(velocity, 0);
-	}
-	
-	private void aimedShot(Vector2f bulletPosition,  Vector2f target) {
+public class GunPositions 
+{
+    private static float playerWidth;
+    private static float playerHeight;
+    
+    private static ArrayList<Vector2f> positions;
+    private static ArrayList<Vector2f> directions;
+    
+    public GunPositions(float width, float height)
+    {
+    	playerWidth = width;
+        playerHeight = height;
         
-        Bullet newBullet = new Bullet(entityManager, bulletPosition, bulletDamage, alliance);
+        positions = new ArrayList<Vector2f>();
+        directions = new ArrayList<Vector2f>();
         
-        // change the x direction to point towards target, 
-        // add random y direction to make the shot seem not 100% accurate.
-        Vector2f directionOfTarget = new Vector2f(target);  
-        directionOfTarget.x -= bulletPosition.x;
-        directionOfTarget.y += (-bulletPosition.y) + (Math.random() * 20) - 10;
-        directionOfTarget.normalise();
+        build();
+    }
+    
+    private void build()
+    {
+        //standard front mounted gun
+        positions.add(new Vector2f(playerWidth / 2, 0));
+        directions.add(new Vector2f(1, 0));
         
-        newBullet.setSpeed(directionOfTarget.x * velocity, directionOfTarget.y  * 250);
-	}
-	
-	private void tripleShot(Vector2f bulletPosition){
-	
-		Bullet diagonalUpBullet = new Bullet(entityManager, bulletPosition, bulletDamage, alliance);
-		Vector2f diagonalUp = new Vector2f(-2,1);
-		diagonalUp.normalise();
-		diagonalUpBullet.setSpeed(diagonalUp.x * velocity, diagonalUp.y * velocity);
+        //front mounted gun, offset to the left
+        positions.add(new Vector2f(playerWidth / 4, playerHeight / 3));
+        directions.add(new Vector2f(1, 0));
         
-        straightShot(bulletPosition);
+        //front mounted gun, offset to the right
+        positions.add(new Vector2f(playerWidth / 4, -playerHeight / 3));
+        directions.add(new Vector2f(1, 0));
         
-        Vector2f diagonalDown = new Vector2f(-2,-1);
-		diagonalDown.normalise();
-        Bullet diagonalDownBullet = new Bullet(entityManager, bulletPosition, bulletDamage, alliance);        
+        //diagonal front lefterest
+        positions.add(new Vector2f(playerWidth / 2, playerHeight / 2));
+        directions.add(new Vector2f(1, (float) .1));
         
-        diagonalDownBullet.setSpeed(diagonalDown.x * velocity, diagonalDown.y * velocity);
-	}
-	
-	public String getName() {
-		return gunType.toString();
-	}
+        //diagonal front righterest
+        positions.add(new Vector2f(playerWidth / 2, -playerHeight / 2));
+        directions.add(new Vector2f(1, (float) -.1));
+        
+        //diagonal front lefterest INVERTED
+        positions.add(new Vector2f(playerWidth / 2, playerHeight / 2));
+        directions.add(new Vector2f(1, (float) -.1));
+        
+        //diagonal front righterest INVERTED
+        positions.add(new Vector2f(playerWidth / 2, -playerHeight / 2));
+        directions.add(new Vector2f(1, (float) .1));
+        
+        //diagonal front lefter
+        positions.add(new Vector2f(playerWidth / 2, playerHeight / 2));
+        directions.add(new Vector2f((float) .5, 1));
+        
+        //diagonal front righter
+        positions.add(new Vector2f(playerWidth / 2, -playerHeight / 2));
+        directions.add(new Vector2f((float) .5,-1));
+        
+         //diagonal front left
+        positions.add(new Vector2f(playerWidth / 2, playerHeight / 2));
+        directions.add(new Vector2f(1, 1));
+        
+        //diagonal front right
+        positions.add(new Vector2f(playerWidth / 2, -playerHeight / 2));
+        directions.add(new Vector2f(1, -1));
+        
+        //left side mounted gun
+        positions.add(new Vector2f(-playerWidth / 15, playerHeight / 2));
+        directions.add(new Vector2f(0, 1));
+        
+        //right side mounted gun
+        positions.add(new Vector2f(-playerWidth / 15, -playerHeight /2));
+        directions.add(new Vector2f(0, -1));
+        
+        //backwards
+        positions.add(new Vector2f(-playerWidth / 2, 0));
+        directions.add(new Vector2f(-1, 0));
+    }
+    
+    public Vector2f getPosition(int index)
+    {
+        return positions.get(index);
+    }
+    
+    public Vector2f getDirection(int index)
+    {
+        return directions.get(index);
+    }
+    
+    public int getSize()
+    {
+        if (positions.size() != directions.size()) {
+            build();
+        }
+        return positions.size();
+    }
 }
