@@ -1,73 +1,78 @@
 package org.gdc.gdcalaga;
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.newdawn.slick.Graphics;
+import org.newdawn.slick.Image;
+import org.newdawn.slick.geom.Vector2f;
 
-public class EntityManager {
-    
-    int newID;//Need clarification as to what this variable is for.
-    
-    private ArrayList<Entity> ents = new ArrayList<Entity>();
-    private ArrayList<Entity> addedEnts = new ArrayList<Entity>();
-    private ArrayList<Entity> removedEnts = new ArrayList<Entity>();
-    
-    EntityManager()
+public class Explosion {
+    private int xtiles, ytiles;
+    public Vector2f pos, size;
+    private float life, maxlife;
+    private ExplosionParticle[] particles;
+    private boolean dead;
+	
+    Explosion(Vector2f position, int xnum, int ynum, Vector2f size)
     {
-        newID = 0;
+        pos = new Vector2f(position);
+        this.size = new Vector2f(size);
+        xtiles = xnum;
+        ytiles = ynum;
+        particles = new ExplosionParticle[xtiles * ytiles];
+		
+        maxlife = 500f;
+        life = maxlife;
+        dead = false;
     }
-    
-    public int AddEntity(Entity newEnt)
-    {
-        newEnt.id = newID;
-        newID++;
-        
-        addedEnts.add(newEnt);
-        
-        return newEnt.id;
+	
+    public void SetImage(Image img){
+        int imgHeight = img.getHeight();
+        int imgWidth = img.getWidth();
+        int srcw = (int)(imgWidth / xtiles);
+        int srch = (int)(imgHeight / ytiles);
+        for(int tile = 0; tile < xtiles * ytiles; tile++){
+            int yTile = (int) Math.floor(tile / xtiles);
+            int xTile = tile - yTile * xtiles;
+			
+            int srcYPos = yTile * srch;
+            int srcXPos = xTile * srcw;
+			
+            float w = (size.x / xtiles);
+            float h = (size.y / ytiles);
+            float x = xTile * w + pos.x - size.x / 2;
+            float y = yTile * h + pos.y - size.y / 2;
+            particles[tile] = new ExplosionParticle(this, x, y, w, h);
+            particles[tile].SetImage(img, srcXPos, srcYPos, srcw, srch);
+        }
+        SetVelocity();
     }
-    
-    private void UpdateLists()
-    {
-        ents.addAll(addedEnts);
-        addedEnts.clear();
-        ents.removeAll(removedEnts);
-        removedEnts.clear();
+	
+    public void SetVelocity(){
+        for(int tile = 0; tile < xtiles * ytiles; tile++){
+            particles[tile].SetVelocity();
+        }
     }
-    
-    public void RemoveEntity(Entity ent)
-    {
-        removedEnts.add(ent);
-    }
-    
-    public void update(float delta) //Consider rewriting this segment? Seems weird. Why not use a while?
-    {
-        for(Iterator<Entity> i = ents.iterator(); i.hasNext(); )
-        {
-            Entity ent = i.next();
-            
-            if(ent.IsDying()){
-                RemoveEntity(ent);
-            } else {
-                ent.update(delta);
+	
+    public void update(float delta){
+        life -= delta;
+        if(life <= 0) dead = true;
+		
+        if(!dead){
+            for(int tile = 0; tile < xtiles * ytiles; tile++){
+                float alpha = (life/maxlife);
+                particles[tile].SetColor(1f, 1f, 1f, alpha);
+                particles[tile].update(delta);
             }
         }
-        
-        UpdateLists();
     }
-    
-    public void draw(Graphics g)
-    {
-
-        for(Iterator<Entity> i = ents.iterator(); i.hasNext(); )
-        {
-            Entity ent = i.next();
-            ent.draw(g);
+	
+    public void render(Graphics g){
+        if(!dead){
+            for(int tile = 0; tile < xtiles * ytiles; tile++){
+                particles[tile].render(g);
+            }
         }
     }
-    
-    public ArrayList<Entity> getEntities()
-    {
-        return new ArrayList<Entity>(ents);
-    }
+	
+    public boolean IsDead(){
+        return dead;
+    }	
 }
