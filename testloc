@@ -1,143 +1,90 @@
 package org.gdc.gdcalaga;
-
-import java.util.Random;
-
-import org.newdawn.slick.Color;
+import java.util.*;
 import org.newdawn.slick.Graphics;
-import org.newdawn.slick.Image;
-import org.newdawn.slick.SlickException;
 import org.newdawn.slick.geom.Vector2f;
 
-/*
- * Upgrade class. Upgrades are dropped randomly when enemies 
- * die, and the player must pickup the upgrade to receive the upgrade.
- * Change this class to just an Upgrade class, that only collides with the player
- * to activate an upgrade() function
- */
-
-/* TODO
- * Set up an RNG for enemies to drop these upgrades
- * Make an image for each of the upgrades we plan to have, preferably 
- *  all the same dimensions
- * Make a path for the upgrade to travel along
- */
-
-public class Upgrade extends Entity
-{
-    public enum UpgradeType
-    {
-        /*
-         *  A new image must be created for a new upgrade
-         */
-    	
-        HEALTH (new String("Pics/upgrade_health.png")),
-        SHIELD (new String("Pics/upgrade_shield.png")),
-        FIRE_RATE (new String("Pics/upgrade_firerate.png")),
-        NUM_GUNS (new String("Pics/upgrade_numguns.png")),
-        DAMAGE (new String("Pics/upgrade_damage.png")),
-        
-        /* Error upgrade, should always be the last value in this enum 
-           and is not included in upgrade count */
-        INVALID_UPGRADE (new String("Pics/upgrade_invalid.png"));
-        
-        private String path;
-        
-        private UpgradeType(String path) {
-        	this.path = path;
-        }
-        
-        public String getImagePath() {
-        	return path;
-        }
-        
-        /**
-         * Returns the number of upgrades.
-         */
-        public static int getUpgradeCount() {
-        	return values().length;
-        }
-        
-        /**
-         * Indices start at zero and are ordered as listed.
-         */
-        public static UpgradeType getIndexedUpgrade(int index) {
-        	if (index < values().length)
-        		return values()[index];
-        	else
-        		return INVALID_UPGRADE;
-        }
-        
-    }
+public class Wave extends Entity {
+    private EnemyGroup group;
+    private String type;
+    private int xCols, yRows, curX, curY, totalEnemies, spawnedEnemies;
+    private float delay;
+    private Path path;
     
-    private static final float SPEED = 50.f;
-    //TODO Change the size values when the upgrade image is made
-    private static final float SIZE_WIDTH = 25.f;
-    private static final float SIZE_HEIGHT = 25.f;
-	
-    public Vector2f initPos, vel;
-    protected Image image;
-	
-    protected Path path;
-    protected PathNode node;
-    private int amplitude;
+    private float lastSpawn;
+    private ArrayList<Enemy> enemies;
     
-    public Upgrade.UpgradeType upgradeType;
-	
-    public Upgrade(EntityManager manager, Vector2f initPos, Upgrade.UpgradeType type) 
+    public Wave(EntityManager manager, String waveType, int rows, int cols, int numEnemies, float spawnDelay, Path wavePath)
     {
         super(manager);
         
-        alliance = Entity.Alliance.UPGRADE;
+        pos = new Vector2f(800, 50);
         
-        pos = new Vector2f(initPos);
-        this.initPos = new Vector2f(initPos);
-        vel = new Vector2f(-SPEED, 0);
-        size = new Vector2f(SIZE_WIDTH, SIZE_HEIGHT);
-		
-        shape = new RectShape(pos, size);
+        type = waveType;
+        yRows = rows;
+        xCols = cols;
+        delay = spawnDelay;
+        group = new EnemyGroup(manager, 100, pos.x, pos.y);
+        path = wavePath;
         
-        upgradeType = type;
+        lastSpawn = 0;
+        enemies = new ArrayList<Enemy>();
         
-        try {
-            image = new Image(type.getImagePath());
-        } catch (SlickException e) {
-            e.printStackTrace();
+        if(type == "block"){
+            totalEnemies = xCols * yRows;
+        } else {
+            totalEnemies = numEnemies;
         }
         
-       //Initialize a random amplitude for the movement function
-        Random rand = new Random(System.currentTimeMillis());
-        int maxAmplitude = 50;
-        int minAmplitude = 10;
-        amplitude = rand.nextInt(maxAmplitude - minAmplitude + 1) + minAmplitude;
+        
+    }
+
+    public void update(float delta)
+    {
+        lastSpawn += delta;
+        
+        if(lastSpawn >= delay && spawnedEnemies < totalEnemies){
+            lastSpawn -= delay;
+            spawnEnemy();
+        }
+        
+        for(int i = enemies.size() - 1; i >= 0; i--){
+            if(enemies.get(i).IsDying()) enemies.remove(i);
+        }
+        if(enemies.size() == 0 && spawnedEnemies >= totalEnemies){
+            group.Destroy();
+            Destroy();
+        }
+    }
+
+    public void draw(Graphics g)
+    {
+        //A wave can not be drawn for it is unimaginable!
+    }
+
+    public void Collide(Entity other)
+    {
+    	//other.Destroy(); No body wins in a collision with a wave!
     }
     
-    public void update(float delta)
-    { 
-        this.pos.x += vel.x * delta / 1000;
-        this.pos.y = (float)(amplitude * Math.sin(pos.x / 20)) + initPos.y;
-        if (this.pos.x <= -20)
-        {
-            Destroy();
+    private void spawnEnemy(){
+        if(type == "block"){
+            float newX = curX * 400 / xCols;
+            float newY = curY * 620 / yRows;
+            Vector2f newPosition = new Vector2f(newX, newY);
+            Enemy newEnemy = new Enemy(entities, newPosition);
+            newEnemy.setGroup(group, newPosition);
+            newEnemy.setPath(path.copy(new Vector2f(pos.x + newPosition.x, pos.y + newPosition.y)));
+            curY++;
+            if(curY >= yRows){
+                curY = 0;
+                curX++;
+            }
+            enemies.add(newEnemy);
+        } else if(type == "stream"){
+            Enemy newEnemy = new Enemy(entities, pos.copy());
+            newEnemy.setPath(path.copy(pos.copy()));
+            enemies.add(newEnemy);
         }
-       
-        RectShape rect = (RectShape)shape;
-        rect.pos.set(this.pos);
-    }
-
-    public void draw(Graphics g) 
-    {
-        int drawX = (int)(pos.x - size.x / 2);
-        int drawY = (int)(pos.y - size.y / 2);
-        float scale = size.x / image.getWidth();
-        image.draw(drawX, drawY, scale, Color.white);
-    }
-
-    public void Collide(Entity other) 
-    {
-        if(other instanceof Player)
-        {
-            Player.upgrade(upgradeType);
-            Destroy();
-        }
+        spawnedEnemies++;
     }
 }
