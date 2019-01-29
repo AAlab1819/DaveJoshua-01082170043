@@ -1,88 +1,73 @@
 package org.gdc.gdcalaga;
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import org.newdawn.slick.Graphics;
-import org.newdawn.slick.geom.Vector2f;
 
-//Entity class. An entity is anything that moves and shoots. Main "thing" the player plays against.
-//The player is also an entity. interp is the time inteveral, so that we can update the entity according to time
-//alliance to detect which entities are against each other....so far it should only be player vs enemes....but who knows
+public class EntityManager {
+    
+    int newID;//Need clarification as to what this variable is for.
+    
+    private ArrayList<Entity> ents = new ArrayList<Entity>();
+    private ArrayList<Entity> addedEnts = new ArrayList<Entity>();
+    private ArrayList<Entity> removedEnts = new ArrayList<Entity>();
+    
+    EntityManager()
+    {
+        newID = 0;
+    }
+    
+    public int AddEntity(Entity newEnt)
+    {
+        newEnt.id = newID;
+        newID++;
+        
+        addedEnts.add(newEnt);
+        
+        return newEnt.id;
+    }
+    
+    private void UpdateLists()
+    {
+        ents.addAll(addedEnts);
+        addedEnts.clear();
+        ents.removeAll(removedEnts);
+        removedEnts.clear();
+    }
+    
+    public void RemoveEntity(Entity ent)
+    {
+        removedEnts.add(ent);
+    }
+    
+    public void update(float delta) //Consider rewriting this segment? Seems weird. Why not use a while?
+    {
+        for(Iterator<Entity> i = ents.iterator(); i.hasNext(); )
+        {
+            Entity ent = i.next();
+            
+            if(ent.IsDying()){
+                RemoveEntity(ent);
+            } else {
+                ent.update(delta);
+            }
+        }
+        
+        UpdateLists();
+    }
+    
+    public void draw(Graphics g)
+    {
 
-public abstract class Entity
-{
-    public enum Alliance
+        for(Iterator<Entity> i = ents.iterator(); i.hasNext(); )
+        {
+            Entity ent = i.next();
+            ent.draw(g);
+        }
+    }
+    
+    public ArrayList<Entity> getEntities()
     {
-        ENEMY,
-        FRIENDLY,
-        UPGRADE
+        return new ArrayList<Entity>(ents);
     }
-    
-    public int id;
-    protected EntityManager entities;
-    protected float interp;
-    protected Entity.Alliance alliance;
-    public Vector2f pos, size;
-    private boolean dying;
-    
-    protected Shape shape;
-    
-    protected float collisionDamage;
-    
-    public Entity(EntityManager manager)
-    {
-        entities = manager;
-        entities.AddEntity(this);
-        
-        dying = false;
-        alliance = Alliance.ENEMY;
-        pos = new Vector2f(0, 0);
-        
-        collisionDamage = 1;
-    }
-
-    public Entity(int xpos, int ypos)
-    {
-        pos = new Vector2f(xpos, ypos);
-        collisionDamage = 1;
-    }
-    
-    public Entity(int xpos, int ypos, float w, float h)
-    {
-        alliance = Alliance.ENEMY;
-        
-        pos = new Vector2f(xpos, ypos);
-        size = new Vector2f(w, h);
-        collisionDamage = 1;
-    }
-    
-    public Entity(Vector2f position, Vector2f size)
-    {
-    	this.pos.set(position);
-    	this.size.set(position);
-    }
-    
-    public boolean IsDying()
-    {
-        return dying;
-    }
-    
-    public void Destroy()
-    {
-        dying = true;
-    }
-    
-    public float getCollisionDamage(){
-    	return collisionDamage;
-    }
-    
-    public Entity.Alliance getAlliance()
-    {
-        return alliance;
-    }
-    
-    public abstract void update(float delta);
-    
-    public abstract void draw(Graphics g);
-    
-    public abstract void Collide(Entity other);
-    
-    
 }
