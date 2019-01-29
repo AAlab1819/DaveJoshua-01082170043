@@ -1,38 +1,77 @@
 package org.gdc.gdcalaga;
-
-import org.gdc.gdcalaga.audio.AudioAsset;
-import org.newdawn.slick.Image;
-import org.newdawn.slick.SlickException;
+import java.util.*;
+import org.newdawn.slick.Graphics;
 import org.newdawn.slick.geom.Vector2f;
-//Testing class. Making sure we can implement new enemies. Works fine
-//Just add this guy instead of Enemy and you can see it work.
-public class Enemy2 extends Enemy 
-{
-    private static final int SIZE_WIDTH = 73;
-    private static final int SIZE_HEIGHT = 43;
-    private static final int BULLET_SPEED = 250;
 
-    public Enemy2(EntityManager manager, Vector2f position) {
-        super(manager, position);
-        size = new Vector2f(SIZE_WIDTH, SIZE_HEIGHT);
-		
-        try {
-            ship = new Image("Pics/EnemyShip2.png");
-        } catch (SlickException e) {
-            e.printStackTrace();
-        }
-    }
+public class EnemyGroup extends Entity{
+	public Vector2f velocity;
+	private float top, bottom;
+	private ArrayList<Enemy> enemies;
 	
-	public void fire()
-	{
-	    Vector2f bulletPos = new Vector2f((int)(pos.x - size.x / 2) + 3, (int)(pos.y + size.y / 2));
-	    Bullet newBullet = new Bullet(entities, bulletPos, 1, alliance);
-	    
-	    bulletPos.set((int)(pos.x - size.x / 2) + 3, (int)(pos.y - size.y / 2));
-	    Bullet newBullet2 = new Bullet(entities, bulletPos, 1, alliance);
-	    
-        newBullet.setSpeed(-BULLET_SPEED, 0);
-        newBullet2.setSpeed(-BULLET_SPEED, 0);
-        audioManager.playSFX(AudioAsset.SFX_FIRE2);
-    }
+	public EnemyGroup(EntityManager mgr, float vely, float x, float y){
+		super(mgr);
+		velocity = new Vector2f(0, vely);
+		pos = new Vector2f(x, y);
+		enemies = new ArrayList<Enemy>();
+	}
+	
+	public void changeDir(){
+		velocity.y *= -1;
+	}
+	
+	public void addEnemy(Enemy enemy){
+		enemies.add(enemy);
+		getBounds();
+	}
+	
+	public void removeEnemy(Enemy enemy){
+		enemies.remove(enemy);
+        getBounds();
+	}
+	
+	public void setY(float y){
+		pos.y = y;
+	}
+	
+	private void getBounds(){
+	    top = 720;
+	    bottom = 0;
+	    for(Enemy e: enemies)
+	    {
+	        if (e.relPos.y < top)
+	            top = e.relPos.y;
+	        if (e.relPos.y > bottom)
+	            bottom = e.relPos.y;
+	    }
+	}
+	
+	public float getYAfterTime(float time){
+	    float dy = pos.y + velocity.y / time;
+	    if(dy + bottom > 720) dy = 720 - bottom + 720 - bottom - dy;
+	    if(dy + top < 0) dy = 0 - top - dy;
+	    return dy;
+	}
+
+	public void update(float delta) {
+		pos.y += velocity.y * delta / 1000;
+		
+		if(pos.y + top < 0){
+		    pos.y = 0 - top;
+            changeDir();
+		}
+		
+		if(pos.y + bottom > 720){
+		    pos.y = 720 - bottom;
+		    changeDir();
+		}
+		
+	}
+
+	public void draw(Graphics g) {
+		
+	}
+
+	public void Collide(Entity other) {
+	}
+	
 }
