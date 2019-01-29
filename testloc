@@ -1,77 +1,88 @@
 package org.gdc.gdcalaga;
-import java.util.*;
 import org.newdawn.slick.Graphics;
 import org.newdawn.slick.geom.Vector2f;
 
-public class EnemyGroup extends Entity{
-	public Vector2f velocity;
-	private float top, bottom;
-	private ArrayList<Enemy> enemies;
-	
-	public EnemyGroup(EntityManager mgr, float vely, float x, float y){
-		super(mgr);
-		velocity = new Vector2f(0, vely);
-		pos = new Vector2f(x, y);
-		enemies = new ArrayList<Enemy>();
-	}
-	
-	public void changeDir(){
-		velocity.y *= -1;
-	}
-	
-	public void addEnemy(Enemy enemy){
-		enemies.add(enemy);
-		getBounds();
-	}
-	
-	public void removeEnemy(Enemy enemy){
-		enemies.remove(enemy);
-        getBounds();
-	}
-	
-	public void setY(float y){
-		pos.y = y;
-	}
-	
-	private void getBounds(){
-	    top = 720;
-	    bottom = 0;
-	    for(Enemy e: enemies)
-	    {
-	        if (e.relPos.y < top)
-	            top = e.relPos.y;
-	        if (e.relPos.y > bottom)
-	            bottom = e.relPos.y;
-	    }
-	}
-	
-	public float getYAfterTime(float time){
-	    float dy = pos.y + velocity.y / time;
-	    if(dy + bottom > 720) dy = 720 - bottom + 720 - bottom - dy;
-	    if(dy + top < 0) dy = 0 - top - dy;
-	    return dy;
-	}
+//Entity class. An entity is anything that moves and shoots. Main "thing" the player plays against.
+//The player is also an entity. interp is the time inteveral, so that we can update the entity according to time
+//alliance to detect which entities are against each other....so far it should only be player vs enemes....but who knows
 
-	public void update(float delta) {
-		pos.y += velocity.y * delta / 1000;
-		
-		if(pos.y + top < 0){
-		    pos.y = 0 - top;
-            changeDir();
-		}
-		
-		if(pos.y + bottom > 720){
-		    pos.y = 720 - bottom;
-		    changeDir();
-		}
-		
-	}
+public abstract class Entity
+{
+    public enum Alliance
+    {
+        ENEMY,
+        FRIENDLY,
+        UPGRADE
+    }
+    
+    public int id;
+    protected EntityManager entities;
+    protected float interp;
+    protected Entity.Alliance alliance;
+    public Vector2f pos, size;
+    private boolean dying;
+    
+    protected Shape shape;
+    
+    protected float collisionDamage;
+    
+    public Entity(EntityManager manager)
+    {
+        entities = manager;
+        entities.AddEntity(this);
+        
+        dying = false;
+        alliance = Alliance.ENEMY;
+        pos = new Vector2f(0, 0);
+        
+        collisionDamage = 1;
+    }
 
-	public void draw(Graphics g) {
-		
-	}
-
-	public void Collide(Entity other) {
-	}
-	
+    public Entity(int xpos, int ypos)
+    {
+        pos = new Vector2f(xpos, ypos);
+        collisionDamage = 1;
+    }
+    
+    public Entity(int xpos, int ypos, float w, float h)
+    {
+        alliance = Alliance.ENEMY;
+        
+        pos = new Vector2f(xpos, ypos);
+        size = new Vector2f(w, h);
+        collisionDamage = 1;
+    }
+    
+    public Entity(Vector2f position, Vector2f size)
+    {
+    	this.pos.set(position);
+    	this.size.set(position);
+    }
+    
+    public boolean IsDying()
+    {
+        return dying;
+    }
+    
+    public void Destroy()
+    {
+        dying = true;
+    }
+    
+    public float getCollisionDamage(){
+    	return collisionDamage;
+    }
+    
+    public Entity.Alliance getAlliance()
+    {
+        return alliance;
+    }
+    
+    public abstract void update(float delta);
+    
+    public abstract void draw(Graphics g);
+    
+    public abstract void Collide(Entity other);
+    
+    
 }
