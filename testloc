@@ -1,59 +1,41 @@
 package org.gdc.gdcalaga;
-import java.util.*;
+
 import org.newdawn.slick.geom.Vector2f;
 
-public class Path extends Object {
-	private Vector2f goalPos;
-	private ArrayList<PathNode> nodes;
-	private int currentNode;
+public class PathNode {
+    public float speed;
+    public Vector2f goalPos;
+    public float goalX; //goalX and goalY to capture values from data/paths.json
+    public float goalY;
+    public boolean relative;
 	
-	public Path(Vector2f pos)
-	{
-	    goalPos = new Vector2f(pos);
-	    currentNode = -1;
-	    nodes = new ArrayList<PathNode>();
-	}
+    PathNode(boolean rel, float x, float y, float moveSpeed){
+        relative = rel;
+        goalPos = new Vector2f(x, y);
+        speed = moveSpeed;
+    }
+    
+    PathNode(boolean rel, Vector2f position, float moveSpeed){
+        relative = rel;
+        goalPos = new Vector2f(position);
+        speed = moveSpeed;
+    }
 	
-	public Path copy(Vector2f pos)
-	{  
-	    Path newPath = new Path(pos);
-	    for (PathNode node : nodes)
-	    {
-	        newPath.addNode(node.relative, node.goalPos, node.speed);
-	    }
-	    return newPath;
-	}
-
-	public void addNode(boolean relative, Vector2f otherPos, float speed)
-	{
-	    if (relative)
-	    {
-	        otherPos.add(this.goalPos);
-	    }
-	    nodes.add(new PathNode(relative, otherPos, speed));
-	}
+    public void setPos(Vector2f newPosition){
+        goalPos = newPosition;
+    }
 	
-	public void setPos(Vector2f newPos)
-	{
-	    for (int i = 0; i < nodes.size(); i++)
-	    {
-	        //I wish operator overloading was in java
-	        nodes.get(i).translatePos(newPos.copy().sub(goalPos));
-	    }
-	    goalPos.set(newPos);
-	}
-	
-	public boolean hasNext(){
-		if(currentNode + 1 >= nodes.size()) return false;
-		else return true;
-	}
-	
-	public PathNode next(){
-		if(hasNext()){
-			currentNode++;
-			return nodes.get(currentNode);
-		} else {
-			return null;
-		}
-	}
+    public void translatePos(Vector2f translateVector){
+        goalPos.add(translateVector);
+    }
+    
+    /**
+     * Cleanup method to convert goalX and goalY values into goalPos,
+     * since our method of creating paths in json relies on initializing
+     * the goalX and goalY values
+     */
+    public void initialize()
+    {
+        goalPos = new Vector2f(goalX, goalY);
+    }
 }
