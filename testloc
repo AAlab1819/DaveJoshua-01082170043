@@ -1,227 +1,118 @@
 package org.gdc.gdcalaga;
-import java.util.LinkedList;
-import java.util.List;
 
-import org.gdc.gdcalaga.audio.AudioAsset;
-import org.gdc.gdcalaga.audio.AudioManager;
 import org.newdawn.slick.GameContainer;
 import org.newdawn.slick.Graphics;
 import org.newdawn.slick.Input;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.state.BasicGameState;
 import org.newdawn.slick.state.StateBasedGame;
-import org.newdawn.slick.geom.Vector2f;
 
+public class PostGameState extends BasicGameState {
 
-public class PlayState extends BasicGameState {
+	public static final int sceneId = 2;
 	
-    public static final int ID = 0;
-    
-    private Player player;
+	//state
+	private String playerName = "";
+	private String currentChar = "";
+	
+	private int charNumber = 97;
+	private int minLetterValue = 97;
+	private int maxLetterValue = 122;
+	
+	private int menuKeyDelayCounter = 250;
 
-
-    private boolean paused = false;
-    private boolean gameInProgress = false;
-    
-    private EntityManager entities = new EntityManager();
-    private Input input;
-
-    private AudioManager audioManager = AudioManager.getAudioManager();
-    private HeadsUpDisplay hud;
-    
-    private List<DisplayObject> disObjs = new LinkedList<DisplayObject>();
-    
-    PathRegistry paths;
-    
-    //
-    Vector2f startPosition = new Vector2f(50, 300);
-    
-    @Override
-	public void init(GameContainer container, StateBasedGame game) throws SlickException {
-        paths = new PathRegistry();
-        paths.loadFromJson("./data/paths.json");        
-    	//initializeState(container);
+	int screenCenterX;
+	int screenCenterY;
+	
+	private Input input;
+	
+	public PostGameState(int screenSizeX, int screenSizeY) {
+		screenCenterX = GDCalaga.SCREEN_SIZE_X / 2;
+		screenCenterY = GDCalaga.SCREEN_SIZE_Y / 2;
 	}
-    
-    private void initializeState(GameContainer container)
-    {
-    	//remove all active entities.
-        for(Entity entity : entities.getEntities())
-        {
-        	entities.RemoveEntity(entity);
-        }
-    	
-    	input = container.getInput();
-    	player= new Player(entities, startPosition);
-    	Spawn.resetSpawner(entities);
-        Enemy.player = player;
-        hud = new HeadsUpDisplay(player);
-        disObjs.clear();
-        
-        try {
-			audioManager.loadAudioAssets();
-			audioManager.playMusic(AudioAsset.MUSIC_LEVEL_1);
-			disObjs.add(new Background(container.getWidth(), container.getHeight()));
-		} catch (SlickException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-        
-
-    }
-    
-    public void restartState(GameContainer container)
-    {
-    	initializeState(container);
-    }
-    
-    @Override
-    public void enter(GameContainer container, StateBasedGame game) throws SlickException {
-    	gameInProgress = true;
-    }
-    
-    
-    @Override
-    public void leave(GameContainer container, StateBasedGame game) throws SlickException {
-    	
-    }
-    
-    
+	
+	
 	@Override
-	public void render(GameContainer container, StateBasedGame game, Graphics g) throws SlickException {
-		for (DisplayObject obj : disObjs) {
-        	obj.draw(g);
-        }
-		
-		entities.draw(g);
-		
-		if(paused)
-		{
-			
-		}
-		else
-		{
-			hud.render(g);
-		}		
-		renderDebugText(g);
+	public void init(GameContainer gameContainer, StateBasedGame stateBasedGame)
+			throws SlickException {
+		input = gameContainer.getInput();	
 	}
 
-
 	@Override
-	public void update(GameContainer container, StateBasedGame game, int delta) throws SlickException {
+	public void render(GameContainer gameContiner, StateBasedGame stateBasedGame, Graphics graphics)
+			throws SlickException {
+		renderPostGame(graphics);
+	}
+
+	private void renderPostGame(Graphics graphics) {		
+		String gameOverText = new String("GAME OVER");
+
+		graphics.drawString(gameOverText, screenCenterX - (gameOverText.length() * 5), screenCenterY);
 		
-		if(paused)
-		{
+		String highscoreText = new String("Highscore: " + Player.getTotalPoints());
+		int xPixel = screenCenterX - (highscoreText.length() * 5);
+		int yPixel = screenCenterY + 15;
+		graphics.drawString(highscoreText, xPixel, yPixel);
+		
+		
+		//rounding errors in the calculations for character positions.
+		String enterNameText = new String("Enter your name: ");
+		xPixel = screenCenterX - ((enterNameText.length() + 5) * 5);
+		yPixel = screenCenterY + 50;
+		graphics.drawString(enterNameText + playerName, xPixel, yPixel);
+		
+		xPixel += (enterNameText.length() + playerName.length() - 2) * 10;
+		yPixel = screenCenterY + 50;
+		graphics.drawString(currentChar, xPixel, yPixel);
+	}
+	
+	@Override
+	public void update(GameContainer gameContainer, StateBasedGame stateBasedGame, int deltaTime)
+			throws SlickException {
+		
+		menuKeyDelayCounter -= deltaTime;
+		if(menuKeyDelayCounter > 0)
 			return;
-		}
 		
-		Collision.checkCollisions(entities.getEntities());
-		
-		Spawn.spawnWave(paths, entities);
-		entities.update(delta);
-		
-		if( ( Math.random()*100) < .1  )
+		if(input.isKeyPressed(Input.KEY_UP))
 		{
-			((Background)disObjs.get(0)).addRandomFloater();
+			charNumber++;
+			if (charNumber > maxLetterValue)
+			{
+				charNumber = minLetterValue;
+			}
+			currentChar = Character.toString((char)charNumber);
+		}
+		else if(input.isKeyPressed(Input.KEY_DOWN))
+		{
+			charNumber--;
+			if (charNumber < minLetterValue)
+			{
+				charNumber = maxLetterValue;
+			}
+			currentChar = Character.toString((char)charNumber);
 		}
 		
-		shipInput(delta);
-       
-		for (DisplayObject obj : disObjs) {
-			obj.update(delta);
+		if(input.isKeyPressed(Input.KEY_SPACE))
+		{
+			playerName += currentChar;
 		}
 		
-		if(player.IsDying())
-        {
-			gameInProgress = false;
-			game.enterState(PostGameState.sceneId);
-        }
-        
-        if(input.isKeyPressed(Input.KEY_ESCAPE))
-        {
-        	game.enterState(MainMenuState.stateId);
-        }
-        
-		/* will put this back in later
-        if(Input.WasKeyPressed(KeyEvent.VK_H))
-        {
-            screenShot();
-        }
-        */
+		// this if clause is automatically true when entering this state, for some reason.
+		if(input.isKeyPressed(Input.KEY_RETURN))
+		{
+			stateBasedGame.enterState(MainMenuState.stateId);
+			HighscoreList.getSingleton().addHighscore(Player.getTotalPoints(), playerName);
+		}
 	}
 
-	
-	
-	
-
-	private void renderDebugText(Graphics g) {
-		/* If we use this same monospace font, each letter takes up 10 pixels
-		 * so we can space the text according to this metric
-		 */
-		final int desiredSpacing = 15;    //Spacing in pixels between each statistic
-		
-		String playerHP = new String("Player HP: " + player.getHealth());
-		int xPixel = 5;
-        g.drawString(playerHP, xPixel, 30);
-        
-        String shieldsLeft = new String("Player Shields: " + player.getShields()/1000.0);
-        xPixel += (playerHP.length() * 10) + desiredSpacing;
-        g.drawString(shieldsLeft, xPixel, 30);
-        
-        String waveCount = new String("Round: " + Spawn.getWave());
-        xPixel += (shieldsLeft.length() * 10) + desiredSpacing;
-        g.drawString(waveCount, xPixel, 30);
-        
-        String pointCount = new String("Points " + Player.getTotalPoints());
-        xPixel += (waveCount.length() * 10) + desiredSpacing;
-        g.drawString(pointCount, xPixel, 30);
-	}
-	
-
-	private void shipInput(int delta) {
-		
-		if(input.isKeyDown(Input.KEY_W)) {
-		    player.moveUp(delta);
-		}
-		else if (input.isKeyDown(Input.KEY_S)) {
-			player.moveDown(delta);
-		}
-
-		if(input.isKeyDown(Input.KEY_A)){
-		    player.moveLeft(delta);
-		}
-		else if (input.isKeyDown(Input.KEY_D)){
-		    player.moveRight(delta);
-		}
-
-		if(input.isKeyDown(Input.KEY_SPACE))
-		{
-		    if (player.fire(delta))
-		    {
-		        audioManager.playSFX(AudioAsset.SFX_FIRE1);
-		    }
-		}
-		
-		if(input.isKeyDown(Input.KEY_Q))
-		{
-		    if (player.activateShield(delta))
-		    {
-		        //audioManager.playSFX(AudioAsset.SFX_SHIELD1);
-		        //should we play a sound, or just show a graphic?
-		    }
-		}
-		else
-		{
-		    player.deactivateShield();
-		}
-	}
-	
 	@Override
 	public int getID() {
-		return ID;
+		// TODO Auto-generated method stub
+		return sceneId;
 	}
-	
-	public boolean isGameInProgress() {
-		return gameInProgress;
-	}
+
 }
+
+
+
