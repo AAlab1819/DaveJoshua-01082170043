@@ -1,108 +1,79 @@
 package org.gdc.gdcalaga;
-import java.util.ArrayList;
+import org.newdawn.slick.Color;
+import org.newdawn.slick.Graphics;
+import org.newdawn.slick.Image;
+import org.newdawn.slick.SlickException;
 
-import org.newdawn.slick.geom.Vector2f;
+public class HeadsUpDisplay {
 
-/*
- * This class contains hard coded positions for additional gun positions
- *  on the player's ship.
- * The positions only need to be adjusted to the ship's world transform.
- * This class should only be initialized once.
- */
+	private Image lifeIcon = null;
+	private Image healthIcon = null;
+	
+	private int livesX = 100;
+	private int livesY = 15;
+	private int livesIconOffset = 20;
+	
+	private int healthX = 180;
+	private int healthY = 15;
+	private int healthIconOffset = 25;
+	
+	private int weaponX = 450;
+	private int weaponY = 15;
+	
+	
+	private int imageScale = 1;
+	private Player player;
+	
+	public HeadsUpDisplay(Player player) {
+		this.player = player;
+	}
+	
+	public void render(Graphics g) {
+		
+		loadResources();
+		if(player != null) {
+			drawHealthBar(g);
+			drawLives(g);
+			drawWeapon(g);
+		}
+	}
+	
+	private void loadResources() {
+		if(lifeIcon == null){
+			try {
+				lifeIcon = new Image("Pics/upgrade_invalid.png");	
+				}
+			catch (SlickException e) {
+				e.printStackTrace();
+				}
+			
+			try {
+				healthIcon = new Image("Pics/HealthBar.png");
+			} 
+			catch (SlickException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
-public class GunPositions 
-{
-    private static float playerWidth;
-    private static float playerHeight;
-    
-    private static ArrayList<Vector2f> positions;
-    private static ArrayList<Vector2f> directions;
-    
-    public GunPositions(float width, float height)
-    {
-    	playerWidth = width;
-        playerHeight = height;
-        
-        positions = new ArrayList<Vector2f>();
-        directions = new ArrayList<Vector2f>();
-        
-        build();
-    }
-    
-    private void build()
-    {
-        //standard front mounted gun
-        positions.add(new Vector2f(playerWidth / 2, 0));
-        directions.add(new Vector2f(1, 0));
-        
-        //front mounted gun, offset to the left
-        positions.add(new Vector2f(playerWidth / 4, playerHeight / 3));
-        directions.add(new Vector2f(1, 0));
-        
-        //front mounted gun, offset to the right
-        positions.add(new Vector2f(playerWidth / 4, -playerHeight / 3));
-        directions.add(new Vector2f(1, 0));
-        
-        //diagonal front lefterest
-        positions.add(new Vector2f(playerWidth / 2, playerHeight / 2));
-        directions.add(new Vector2f(1, (float) .1));
-        
-        //diagonal front righterest
-        positions.add(new Vector2f(playerWidth / 2, -playerHeight / 2));
-        directions.add(new Vector2f(1, (float) -.1));
-        
-        //diagonal front lefterest INVERTED
-        positions.add(new Vector2f(playerWidth / 2, playerHeight / 2));
-        directions.add(new Vector2f(1, (float) -.1));
-        
-        //diagonal front righterest INVERTED
-        positions.add(new Vector2f(playerWidth / 2, -playerHeight / 2));
-        directions.add(new Vector2f(1, (float) .1));
-        
-        //diagonal front lefter
-        positions.add(new Vector2f(playerWidth / 2, playerHeight / 2));
-        directions.add(new Vector2f((float) .5, 1));
-        
-        //diagonal front righter
-        positions.add(new Vector2f(playerWidth / 2, -playerHeight / 2));
-        directions.add(new Vector2f((float) .5,-1));
-        
-         //diagonal front left
-        positions.add(new Vector2f(playerWidth / 2, playerHeight / 2));
-        directions.add(new Vector2f(1, 1));
-        
-        //diagonal front right
-        positions.add(new Vector2f(playerWidth / 2, -playerHeight / 2));
-        directions.add(new Vector2f(1, -1));
-        
-        //left side mounted gun
-        positions.add(new Vector2f(-playerWidth / 15, playerHeight / 2));
-        directions.add(new Vector2f(0, 1));
-        
-        //right side mounted gun
-        positions.add(new Vector2f(-playerWidth / 15, -playerHeight /2));
-        directions.add(new Vector2f(0, -1));
-        
-        //backwards
-        positions.add(new Vector2f(-playerWidth / 2, 0));
-        directions.add(new Vector2f(-1, 0));
-    }
-    
-    public Vector2f getPosition(int index)
-    {
-        return positions.get(index);
-    }
-    
-    public Vector2f getDirection(int index)
-    {
-        return directions.get(index);
-    }
-    
-    public int getSize()
-    {
-        if (positions.size() != directions.size()) {
-            build();
+	private void drawHealthBar(Graphics g)
+	{
+		for(int i = 0; i < player.getHealth(); ++i)
+        {
+        	healthIcon.draw(healthX + (healthIconOffset*i), healthY, imageScale, Color.white);
         }
-        return positions.size();
-    }
+	}
+	
+	private void drawLives(Graphics g) {
+		for(int i = 0; i < player.getLives(); ++i)
+        {
+			lifeIcon.draw(livesX + (livesIconOffset*i), livesY, imageScale, Color.white);
+        }
+	}
+	
+	private void drawWeapon(Graphics g) {
+		
+		String weaponName = new String("Weapon: " + player.getWeapon().getName());
+        g.drawString(weaponName, weaponX, weaponY);
+	}
 }
