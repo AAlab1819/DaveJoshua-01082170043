@@ -1,97 +1,87 @@
 package org.gdc.gdcalaga;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import org.newdawn.slick.GameContainer;
+import org.newdawn.slick.Graphics;
+import org.newdawn.slick.Input;
+import org.newdawn.slick.SlickException;
+import org.newdawn.slick.state.BasicGameState;
+import org.newdawn.slick.state.StateBasedGame;
 
-import org.gdc.gdcalaga.HighscoreElement;
-
-
-public class HighscoreList {
-
-	private List<HighscoreElement> scores = new ArrayList<HighscoreElement>();
-	private static HighscoreList singleton;
+public class HighscoreState extends BasicGameState {	
+	private int centerX;
+	private int centerY;
+	private final int lineSpacing = 15;
+	private final int maxScoreLength = 9;
+	private final int maxScoresInFile = 10;
 	
+	private final String backString = ">>Back<<";
+	private Input input;
 	
-	public static HighscoreList getSingleton() {
-		if(singleton == null)
-			singleton = new HighscoreList();
-		return singleton;
+	//slick
+	public static final int stateId = 3;
+	
+	public HighscoreState(int screenSizeX, int screenSizeY)
+	{	
+		this.centerX = screenSizeX / 2;
+		this.centerY = screenSizeY / 2;
 	}
 	
-	// singleton
-	private HighscoreList() {
-		
-	}
 	
-	public List<HighscoreElement> getHighscoreList() {
-		//if the scores list is empty read highscores from file.
-		if(scores.size() == 0)
+	private void drawHighscoreList(Graphics graphics) {
+		for(int i = 0; i < HighscoreList.getSingleton().getHighscoreList().size(); ++i)
 		{
-			try {
-				//String current = new java.io.File( "." ).getCanonicalPath();
-		        //System.out.println("Current dir:"+current);
-		        
-				BufferedReader in = new BufferedReader(new FileReader("highscore.dat"));
-				
-				String line;
-				while ((line = in.readLine()) != null) {
-					  
-					  String[] split = line.split(",");
-					  scores.add(new HighscoreElement(Integer.parseInt(split[0]), split[1]));
-					  }
-				in.close();
-				
-			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (NumberFormatException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			String number = String.valueOf(HighscoreList.getSingleton().getHighscoreList().get(i).getScore());
+			number = String.format("%1$" + maxScoreLength + "s", number); 
+			String score = (i+1) + ": " +  number + " - " + HighscoreList.getSingleton().getHighscoreList().get(i).getName();
 			
-			Collections.sort(scores,Collections.reverseOrder());
-		}			
-		
-		return scores;
-	}
-	
-	public void addHighscore(int score, String name) {
-		
-		scores.add(new HighscoreElement(score,name));
-		Collections.sort(scores,Collections.reverseOrder());
-	}
-	
-	public void saveHighscore()
-	{
-		try {
-			//String current = new java.io.File( "." ).getCanonicalPath();
-	        //System.out.println("Current dir:"+current);
-	        
-			BufferedWriter out = new BufferedWriter(new FileWriter("highscore.dat"));
-			
-			for(int i = 0; i < scores.size(); ++i)
-			{
-				out.write( scores.get(i).getScore() + "," + scores.get(i).getName() + "\n");
-			}
-			
-			out.close();
-			
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+        	graphics.drawString(score,
+        			centerX - (maxScoreLength * 10),
+        			centerY + (lineSpacing * i));
 		}
 	}
+
+	private void drawBackButton(Graphics graphics) {
+		graphics.drawString(backString,
+    			centerX - (backString.length() * 5),
+    			centerY + lineSpacing * (maxScoresInFile+1) );
+		
+	}
+	
+	@Override
+	public void init(GameContainer gameContainer, StateBasedGame stateBasedGame)
+			throws SlickException {
+		// TODO Auto-generated method stub
+		input = gameContainer.getInput();
+	}
+
+
+	@Override
+	public void render(GameContainer gameContainer, StateBasedGame stateBasedGame, Graphics graphics)
+			throws SlickException {
+		// TODO Auto-generated method stub
+		drawHighscoreList(graphics);
+		drawBackButton(graphics);
+	}
+
+
+	@Override
+	public void update(GameContainer gameContainer, StateBasedGame stateBasedGame, int deltaTime)
+			throws SlickException {
+		// TODO Auto-generated method stub
+		if(input.isKeyDown(Input.KEY_ESCAPE)) {
+			stateBasedGame.enterState(MainMenuState.stateId);
+		}
+		// as seems to be the case the next if statement will automatically be true.
+		//else if(input.isKeyDown(Input.KEY_ENTER)) {
+		//	stateBasedGame.enterState(MainMenuState.stateId);
+		//}
+	}
+
+
+	@Override
+	public int getID() {
+		// TODO Auto-generated method stub
+		return stateId;
+	}
+	
 }
